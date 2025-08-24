@@ -1,17 +1,19 @@
-import User from "../models/User.js";
+import Admin from "../models/adminUser.js";
 
-export const signUp = async (req, res) => {
-    // res.status(201).json({ name: ""})
+export const adminSignUp = async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
+    //const position=req.body.position;
     try {
-        const createdUser = await User.create({
+        const createdAdmin = await Admin.create({
             email: email,
-            password: password
+            password: password,
+            position:"NGO"
         })
 
         return res.status(201).json({
-            message: "user created"
+            success:true,
+            message: createdAdmin
         })
 
     } catch (error) {
