@@ -1,13 +1,20 @@
 import Admin from "../models/adminUser.js";
+import bcrypt from 'bcrypt';
 
 export const adminSignUp = async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
-    //const position=req.body.position;
+    
     try {
+
+        
+        const salt = await bcrypt.genSalt(10); // generate salt
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+
         const createdAdmin = await Admin.create({
             email: email,
-            password: password,
+            password: hashedPassword,
             position:"NGO"
         })
 

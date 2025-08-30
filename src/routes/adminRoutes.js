@@ -1,11 +1,27 @@
-import { Router } from "express";
-import calamityRouter from "./calamityRoutes.js";
-import aidRequestRouter from "./aidRequestRoutes.js";
+import { group } from "../utils/routerUtils.js";
 
-const router=Router();
-
-router.use('/calamity', calamityRouter )
-router.use('/aid',aidRequestRouter  )
+import { adminSignUp } from "../controllers/adminUserController.js";
+import { getAllCalamityTypes, addCalamity } from "../controllers/calamityTypeController.js";
+import { getAllAidRequests, addAidRequest, getAidRequest } from "../controllers/aidRequestController.js";
 
 
-export default router;
+export function adminRoutes(router) {
+    router.post('/signup', adminSignUp);
+    group(
+        '/calamity',
+        (calamityRouter) => {
+            calamityRouter.post("/add", addCalamity);
+            calamityRouter.get('/', getAllCalamityTypes);
+        },
+        router,
+    );
+    group(
+        '/aidRequest',
+        (aidRequestRouter) => {
+            aidRequestRouter.get("/", getAidRequest)
+            aidRequestRouter.get("/allAid", getAllAidRequests)
+            aidRequestRouter.post("/add", addAidRequest)
+        },
+        router
+    )
+}

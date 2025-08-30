@@ -1,10 +1,17 @@
 import { Router } from "express";
-import adminRoutes  from "./adminRoutes.js";
-import adminAuthRoutes from "./authRoutes.js";
+import { group } from "../utils/routerUtils.js";
+import { adminRoutes } from "./adminRoutes.js";
+import { publicUserRoutes } from "./publicUser.routes.js";
 
-const router=Router();
+const router = Router()
 
-router.use('/admin', adminRoutes)
-router.use("/auth",adminAuthRoutes)
+group(
+    '/api',
+    (apiRouter) => {
+        group('/admin', adminRoutes, apiRouter);
+        group('/public', publicUserRoutes, apiRouter)
+    },
+    router
+)
 
 export default router;

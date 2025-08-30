@@ -11,7 +11,8 @@ const aidRequestSchema = new mongoose.Schema({
         type: locationSchema
     },
     imageUrl: {
-        type: String
+        type: String,
+        required:false
     },
     status: {
         type: String,
@@ -22,10 +23,10 @@ const aidRequestSchema = new mongoose.Schema({
         required: true,
         enum:["high","medium","low"]
     },
-    createdBy:{
+    aidRequestedBy:{
         type:mongoose.Types.ObjectId,
         required:true,
-        ref:"Users"
+        ref:"userProfile"
     }
 
 })

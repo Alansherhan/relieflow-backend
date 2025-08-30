@@ -7,7 +7,7 @@ export const addCenter = async (req, res) => {
     const coordinatorNumber = req.body.coordinatorNumber;
 
 
-    if(coordinatorNumber.length > 10){
+    if (coordinatorNumber.length > 10) {
         return res.status(201).json({
             message: 'Please enter a valid number !!!s'
         })
@@ -16,7 +16,7 @@ export const addCenter = async (req, res) => {
     try {
         const createdUser = await ReliefCenter.create({
             shelterName: shelterName,
-           address: address,
+            address: address,
             coordinatorName: coordinatorName,
             coordinatorNumber: coordinatorNumber
         })

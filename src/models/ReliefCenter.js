@@ -1,26 +1,6 @@
 import mongoose from "mongoose"
-import {locationSchema} from './common.js'
-
-const addressSchema = new mongoose.Schema({
-    addressLine1: {
-        type: String,
-        required: true
-    },
-    addressLine2: {
-        type: String
-    },
-    addressLine3: {
-        type: String
-    },
-    pinCode: {
-        type: Number,
-
-        required: true
-    },
-    location:{
-        type:locationSchema
-    }
-})
+import {addressSchema} from './common.js' 
+ 
 
 
 const reliefCenter = new mongoose.Schema({
