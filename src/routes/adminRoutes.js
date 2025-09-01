@@ -3,6 +3,7 @@ import { group } from "../utils/routerUtils.js";
 import { adminSignUp } from "../controllers/adminUserController.js";
 import { getAllCalamityTypes, addCalamity } from "../controllers/calamityTypeController.js";
 import { getAllAidRequests, addAidRequest, getAidRequest } from "../controllers/aidRequestController.js";
+import { assignTask } from "../controllers/taskController.js";
 
 
 export function adminRoutes(router) {
@@ -23,5 +24,12 @@ export function adminRoutes(router) {
             aidRequestRouter.post("/add", addAidRequest)
         },
         router
-    )
+    );
+    group(
+        '/task',
+        (taskrouter)=>{
+            taskrouter.post("/assign",assignTask)
+        },
+        router
+    );
 }

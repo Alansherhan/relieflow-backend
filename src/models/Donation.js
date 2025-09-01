@@ -33,3 +33,5 @@ const donationSchema = new mongoose.Schema({
         enum: ["accepted", "pending", "rejected"]
     }
 })
+
+export default mongoose.model("DonationSchema",donationSchema)
