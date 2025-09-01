@@ -4,7 +4,7 @@ export const assignTask = async (req, res) => {
     const taskName=req.body.taskName;
     const taskType=req.body.taskType;
     const assignedTo=req.body.assignedTo;
-    const aidRequest=req.body.aidRequest;
+    const donationRequest=req.body.donationRequest;
 
     try{
         const taskAssigned=await TaskSchema.create({
@@ -13,7 +13,7 @@ export const assignTask = async (req, res) => {
             status:"accepted",
             priority:"high",
             assignedTo:assignedTo,
-            aidRequest:aidRequest
+            donationRequest:donationRequest
         })
 
         return res.status(201).json({
@@ -29,3 +29,10 @@ export const assignTask = async (req, res) => {
         })
     }
 };
+
+export const getAllTasks=async(req,res)=>{
+    const allTasks=await TaskSchema.find().populate("assignedTo");
+    console.log(allTasks)
+    return res.status(200).json(allTasks);
+    
+}

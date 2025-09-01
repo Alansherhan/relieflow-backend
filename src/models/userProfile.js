@@ -13,6 +13,7 @@ const userSchema=new mongoose.Schema({
     },
     address:{
         type:addressSchema,
+        
         required:true
     },
     phoneNumber:{
@@ -22,6 +23,7 @@ const userSchema=new mongoose.Schema({
     },
     password:{
         type:String,
+        select: false,
         requied:true
     },
     role:{

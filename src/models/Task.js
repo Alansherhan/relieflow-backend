@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
+import userProfile from "./userProfile.js";
+import AidRequest from "./AidRequest.js";
 // import AidRequest from "./AidRequest.js";
-// import DonationRequest from "./DonationRequest.js";
+import DonationRequest from "./DonationRequest.js";
 
 const taskSchema=new mongoose.Schema({
     taskName:{
@@ -25,17 +27,17 @@ const taskSchema=new mongoose.Schema({
     assignedTo:{
         type:mongoose.Types.ObjectId,
         required:true,
-        ref:"userProfile"
+        ref:userProfile.modelName
     },
     aidRequest:{
         type:mongoose.Types.ObjectId,
         required:false,
-        ref:"AidRequest"
+        ref:AidRequest.modelName
     },
     donationRequest:{
         type:mongoose.Types.ObjectId,
         required:false,
-        ref:"DonationRequest"
+        ref:DonationRequest.modelName
     }
 })
 
