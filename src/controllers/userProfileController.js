@@ -73,6 +73,7 @@ export const login = async (req, res) => {
       message: "Login successful",
       success: true,
       token: token,
+      user: userLogin,
     });
   } catch (error) {
     console.log(error);
