@@ -7,6 +7,7 @@ export const signUp = async (req, res) => {
     const address = req.body.address;
     const phoneNumber = req.body.phoneNumber;
     const password = req.body.password;
+    const role=req.body.role;
     try {
 
         const salt = await bcrypt.genSalt(10); // generate salt
@@ -19,7 +20,7 @@ export const signUp = async (req, res) => {
             address: address,
             phoneNumber: phoneNumber,
             password: hashedPassword,
-            role:"public",
+            role:role,
             skill:"other"
         })
 
