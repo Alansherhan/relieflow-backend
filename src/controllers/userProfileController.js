@@ -1,6 +1,9 @@
 import User from '../models/userProfile.js';
 import bcrypt from 'bcrypt';
 
+import jwt from 'jsonwebtoken'
+import { Query } from 'mongoose';
+
 export const signUp = async (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
@@ -42,28 +45,39 @@ export const login = async (req, res) => {
       email: email,
     });
 
+    const errorResponse = {
+        message: "Unauthorized",
+        success: false,
+    }
+
     if (!userLogin) {
-      return res.status(404).json({
-        message: 'User not found !!!',
-        success: true,
-      });
+      return res.status(401).json(errorResponse);
     }
     const isPasswordMatched = bcrypt.compare(password, userLogin.password);
 
-    if (isPasswordMatched) {
-      return res.status(201).json({
-        message: userLogin,
-        success: true,
-      });
+    if (!isPasswordMatched) {
+      return res.status(401).json(errorResponse);
     }
-    return res.status(401).json({
-      message: "Password or Email doesnt match",
-      success: false,
+
+    const payload = {
+      id: userLogin._id,
+      email: userLogin.email,
+      role: userLogin.role,
+    };
+
+    //creating token
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+    return res.status(200).json({
+      message: "Login successful",
+      success: true,
+      token: token,
     });
   } catch (error) {
     console.log(error);
-    return res.status(400).json({
-      message: 'error',
+    return res.status(500).json({
+      message: 'Internal Server Error',
       success: false,
     });
   }
