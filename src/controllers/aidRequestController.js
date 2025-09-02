@@ -74,11 +74,13 @@ export const getAllAidRequests = async (req, res)=>{
 
 
 export const deleteAidRequest =  async (req,res) => {
-    const { _id } = req.body;
+    const { id } = req.body;
 
     try{
-        const deleted=await AidRequest.deleteOne(_id);
-        console.log("Deleted aid request= ",deleted)
+        const deletedAid=await AidRequest.findById(id);
+
+        await deletedAid.deleteOne()
+       
         return res.status(201).json({
             message:"Deleted Successfully",
             success:true
