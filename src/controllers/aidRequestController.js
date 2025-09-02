@@ -3,9 +3,6 @@ import AidRequest from "../models/AidRequest.js";
 
 
 export const getAidRequest = async (req, res) => {
-
-
-
     const {id} = req.params;
  
     try {
@@ -30,9 +27,8 @@ export const getAidRequest = async (req, res) => {
 
 
 export const addAidRequest = async (req, res) => {
-    const calamityType = req.body.calamityType;
-    const location = req.body.location;
-    const imageUrl = req.body.imageUrl;
+
+    const {calamityType , location , imageUrl } = req.body
 
     if (!calamityType || !location){
         return res.status(422).json(
@@ -52,12 +48,12 @@ export const addAidRequest = async (req, res) => {
             priority: "low"
         })
 
-        const populated = await aidCreated.populate("calamityType")
+        const populatedAidData = await aidCreated.populate("calamityType")
 
         return res.status(201).json({
             success: true,
             message: "Your aid request have been submitted",
-            data: aidCreated
+            data: populatedAidData
         })
 
     } catch (error) {
@@ -76,6 +72,26 @@ export const getAllAidRequests = async (req, res)=>{
     return res.status(200).json(aidRequest);
 }
 
+
+export const deleteAidRequest =  async (req,res) => {
+    const { _id } = req.body;
+
+    try{
+        const deleted=await AidRequest.deleteOne(_id);
+        console.log("Deleted aid request= ",deleted)
+        return res.status(201).json({
+            message:"Deleted Successfully",
+            success:true
+        })
+    }
+    catch(error){
+        console.log(error)
+         return res.status(500).json({
+            success:false,
+            message:"Unable to delete"
+         });
+    }
+}
 
 // export const update
 

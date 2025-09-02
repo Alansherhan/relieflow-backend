@@ -33,3 +33,12 @@ export const addCenter = async (req, res) => {
         })
     }
 };
+
+export const getAllReliefCenters=async(req,res)=>{
+    const allCenters=await ReliefCenter.find().lean();
+    console.log(allCenters)
+    return res.status(200).json({
+        success:true,
+        message:allCenters
+    })
+}

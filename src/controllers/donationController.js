@@ -26,3 +26,9 @@ export const addDonation = async (req, res) => {
         })
     }
 };
+
+export const getAllDonations=async(req,res)=>{
+    const allDonations=await DonationSchema.find().lean()
+    console.log(allDonations)
+    return res.status(200).json(allDonations)
+}

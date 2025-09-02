@@ -28,3 +28,12 @@ export const addDonationRequest = async (req, res) => {
         })
     }
 };
+
+export const getAllDonationRequests=async(req,res)=>{
+    const allDonationRequests=await DonationRequest.find().lean();
+    console.log(allDonationRequests)
+    return res.status(200).json({
+        suucess:true,
+        message:allDonationRequests
+    })
+}

@@ -2,8 +2,9 @@ import { group } from "../utils/routerUtils.js";
 
 import { adminSignUp } from "../controllers/adminUserController.js";
 import { getAllCalamityTypes, addCalamity } from "../controllers/calamityTypeController.js";
-import { getAllAidRequests, addAidRequest, getAidRequest } from "../controllers/aidRequestController.js";
+import { getAllAidRequests, addAidRequest, getAidRequest, deleteAidRequest } from "../controllers/aidRequestController.js";
 import { assignTask, getAllTasks } from "../controllers/taskController.js";
+import { addCenter, getAllReliefCenters } from "../controllers/reliefCenterController.js";
 
 
 export function adminRoutes(router) {
@@ -22,6 +23,7 @@ export function adminRoutes(router) {
             aidRequestRouter.get("/", getAidRequest)
             aidRequestRouter.get("/allAid", getAllAidRequests)
             aidRequestRouter.post("/add", addAidRequest)
+            aidRequestRouter.delete('/delete',deleteAidRequest)
         },
         router
     );
@@ -30,6 +32,14 @@ export function adminRoutes(router) {
         (taskrouter)=>{
             taskrouter.post("/assign",assignTask)
             taskrouter.get("/getAllTasks",getAllTasks)
+        },
+        router
+    );
+    group(
+        '/center',
+        (centerRouter)=>{
+            centerRouter.post("/add",addCenter)
+            centerRouter.get("/getAll",getAllReliefCenters)
         },
         router
     );
