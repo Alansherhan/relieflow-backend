@@ -8,8 +8,8 @@ export function publicUserRoutes(router) {
     router.post('/signup', signUp)
     router.post("/login",login)
     group("/", (rootRouter)=>{
-        rootRouter.use(protect(['public']));
-        rootRouter.post("/donation/add",addDonationRequest)
+        // rootRouter.use(protect(['public']));
+        rootRouter.post("/donation/request/add",addDonationRequest)
         rootRouter.post("/donation/donate",addDonation)
-    });
+    }, router);
 }
