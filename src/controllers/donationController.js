@@ -32,3 +32,4 @@ export const getAllDonations=async(req,res)=>{
     console.log(allDonations)
     return res.status(200).json(allDonations)
 }
+

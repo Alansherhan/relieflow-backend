@@ -2,7 +2,7 @@ import User from '../models/userProfile.js';
 import bcrypt from 'bcrypt';
 
 import jwt from 'jsonwebtoken'
-import { Query } from 'mongoose';
+
 
 export const signUp = async (req, res) => {
   const name = req.body.name;
@@ -58,7 +58,7 @@ export const login = async (req, res) => {
     if (!isPasswordMatched) {
       return res.status(401).json(errorResponse);
     }
-
+//Key generation for authentication checking that takes place in middleware
     const payload = {
       id: userLogin._id,
       email: userLogin.email,
@@ -83,3 +83,5 @@ export const login = async (req, res) => {
     });
   }
 };
+
+
