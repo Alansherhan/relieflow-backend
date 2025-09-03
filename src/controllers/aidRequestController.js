@@ -90,13 +90,24 @@ export const getAllAidRequests = async (req, res)=>{
 
 
 export const deleteAidRequest =  async (req,res) => {
-    const { id } = req.body;
+    const { id } = req.params;
 
     try{
+        if(!id){
+            return res.status(403).json({
+                success:false,
+                message:'id required'
+            })
+        }
         const deletedAid=await AidRequest.findById(id);
-
-        await deletedAid.deleteOne()
-       
+        if(!deletedAid){
+            return res.status(201).json({
+                success:false,
+                message:'Database is empty'
+            })
+        }
+        await deletedAid.deleteOne();
+        console.log(deletedAid);
         return res.status(201).json({
             message:"Deleted Successfully",
             success:true

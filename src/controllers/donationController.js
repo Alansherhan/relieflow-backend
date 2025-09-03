@@ -28,8 +28,19 @@ export const addDonation = async (req, res) => {
 };
 
 export const getAllDonations=async(req,res)=>{
-    const allDonations=await DonationSchema.find().lean()
-    console.log(allDonations)
-    return res.status(200).json(allDonations)
+    try{
+        const allDonations=await DonationSchema.find().lean()
+        console.log(allDonations)
+        return res.status(200).json({
+            success:true,
+            message:allDonations
+        })
+    }
+    catch(error){
+        console.log(error)
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        });
+    }
 }
-

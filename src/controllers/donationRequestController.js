@@ -30,11 +30,17 @@ export const addDonationRequest = async (req, res) => {
 };
 
 export const getAllDonationRequests=async(req,res)=>{
-    
-    const allDonationRequests=await DonationRequest.find().lean();
-    console.log(allDonationRequests)
-    return res.status(200).json({
-        sucess:true,
-        message:allDonationRequests
+    try{
+        const allDonationRequests=await DonationRequest.find().lean();
+        console.log(allDonationRequests)
+        return res.status(200).json({
+            sucess:true,
+            message:allDonationRequests
     })
+    }catch(error){
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        })
+    }
 }

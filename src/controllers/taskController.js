@@ -31,8 +31,18 @@ export const assignTask = async (req, res) => {
 };
 
 export const getAllTasks=async(req,res)=>{
+    try{
     const allTasks=await TaskSchema.find().populate("assignedTo");
     console.log(allTasks)
-    return res.status(200).json(allTasks);
-    
-}
+    return res.status(200).json({
+        success:true,
+        message:allTasks
+    })
+    }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+    })
+  }
+};

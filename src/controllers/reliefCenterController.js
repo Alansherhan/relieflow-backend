@@ -33,12 +33,20 @@ export const addCenter = async (req, res) => {
 };
 
 export const getAllReliefCenters = async (req, res) => {
-  const allCenters = await ReliefCenter.find().lean();
-  console.log(allCenters);
-  return res.status(200).json({
-    success: true,
-    message: allCenters,
-  });
+  try {
+    const allCenters = await ReliefCenter.find().lean();
+    console.log(allCenters);
+    return res.status(200).json({
+      success: true,
+      message: allCenters,
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+    })
+  }
 };
 
 export const deleteReliefCenter = async (req, res) => {
@@ -46,30 +54,30 @@ export const deleteReliefCenter = async (req, res) => {
 
   try {
     if (!id) {
-        return res.status(403).json({
-            success:false,
-            message:"id required"
-        })
-        
+      return res.status(403).json({
+        success: false,
+        message: 'id required',
+      });
     }
     const deletedCenter = await ReliefCenter.findById(id);
     if (!deletedCenter) {
-        return res.status(201).json({
-            success:false,
-            message:"Database is empty"
-        })
+      return res.status(201).json({
+        success: false,
+        message: 'Database is empty',
+      });
     }
-    await deletedCenter.deleteOne()
+    await deletedCenter.deleteOne();
     console.log(deletedCenter);
     return res.status(201).json({
       success: true,
-      message: 'Deleted Sucessfully'
-    })
-  } catch (error) {
-    console.log(error)
+      message: 'Deleted Sucessfully',
+    });
+  } 
+  catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
-      message: 'Unable to delete'
-    })
+      message: 'Unable to delete',
+    });
   }
-}
+};
