@@ -11,12 +11,7 @@ export function publicUserRoutes(router) {
         // rootRouter.use(protect(['public']));
         rootRouter.post("/request/add",addDonationRequest)
         rootRouter.get("/request/",getAllDonationRequests)
-<<<<<<< HEAD
-        rootRouter.delete("request/delete/:id",deleteDonationRequest)
-       
-=======
         rootRouter.delete("/request/:id",deleteDonationRequest)
->>>>>>> e0510bf42addcc2efaba62d3e0fc6bd723dc17d2
         rootRouter.post("/donate",addDonation)
         rootRouter.get("/",getAllDonations)
     }, router);
