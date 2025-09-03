@@ -18,12 +18,12 @@ export function adminRoutes(router) {
         router,
     );
     group(
-        '/aid-request',
+        '/aid',
         (aidRequestRouter) => {
             aidRequestRouter.get("/:id", getAidRequest)
             aidRequestRouter.get("/", getAllAidRequests)
             aidRequestRouter.post("/add", addAidRequest)
-            aidRequestRouter.delete('/delete',deleteAidRequest)
+            aidRequestRouter.delete('/delete/:id',deleteAidRequest)
         },
         router
     );
@@ -31,7 +31,7 @@ export function adminRoutes(router) {
         '/task',
         (taskrouter)=>{
             taskrouter.post("/assign",assignTask)
-            taskrouter.get("/get-all-tasks",getAllTasks)
+            taskrouter.get("/",getAllTasks)
         },
         router
     );
@@ -39,7 +39,7 @@ export function adminRoutes(router) {
         '/center',
         (centerRouter)=>{
             centerRouter.post("/add",addCenter)
-            centerRouter.get("/getAll",getAllReliefCenters)
+            centerRouter.get("/",getAllReliefCenters)
             centerRouter.delete("/delete/:id",deleteReliefCenter)
         },
         router

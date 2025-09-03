@@ -9,6 +9,7 @@ export const addCalamity = async (req, res) => {
         })
 
         return res.status(201).json({
+            success:true,
             message: createdUser
         })
 
@@ -22,9 +23,18 @@ export const addCalamity = async (req, res) => {
 };
 
 export const getAllCalamityTypes = async (req, res)=>{
-    const calamityTypes = await CalamityType.find().select("calamityName");
-
-    console.log(calamityTypes)
-
-    return res.status(200).json(calamityTypes);
+    try{
+        const calamityTypes = await CalamityType.find().select("calamityName");
+        console.log(calamityTypes)
+        return res.status(200).json({
+            success:true,
+            message:calamityTypes
+        })
+    }catch(error){
+        console.log(error)
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        });
+    }
 }

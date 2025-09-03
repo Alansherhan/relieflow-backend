@@ -7,11 +7,11 @@ import { group } from "../utils/routerUtils.js"
 export function publicUserRoutes(router) {
     router.post('/signup', signUp)
     router.post("/login",login)
-    group("/", (rootRouter)=>{
+    group("/donation", (rootRouter)=>{
         // rootRouter.use(protect(['public']));
-        rootRouter.post("/donation/request/add",addDonationRequest)
-        rootRouter.get("/donation/request/getAll",getAllDonationRequests)
-        rootRouter.post("/donation/donate",addDonation)
-        rootRouter.get("/donation/getAll",getAllDonations)
+        rootRouter.post("/request/add",addDonationRequest)
+        rootRouter.get("/request/",getAllDonationRequests)
+        rootRouter.post("/donate",addDonation)
+        rootRouter.get("/",getAllDonations)
     }, router);
 }

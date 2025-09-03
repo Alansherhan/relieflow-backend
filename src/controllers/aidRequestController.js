@@ -28,7 +28,10 @@ export const getAidRequest = async (req, res) => {
 
 export const addAidRequest = async (req, res) => {
 
-    const {calamityType , location , imageUrl } = req.body
+    // const {calamityType , location , imageUrl ,aidRequestedBy} = req.body
+    const calamityType=req.body.calamityType;
+    const location=req.body.location;
+    const aidRequestedBy=req.body.aidRequestedBy;
 
     if (!calamityType || !location){
         return res.status(422).json(
@@ -43,12 +46,13 @@ export const addAidRequest = async (req, res) => {
         const aidCreated = await AidRequest.create({
             calamityType: calamityType,
             location: location,
-            imageUrl: imageUrl,
+            // imageUrl: imageUrl,
             status: "pending",
-            priority: "low"
+            priority: "low",
+            aidRequestedBy:aidRequestedBy
         })
 
-        const populatedAidData = await aidCreated.populate("calamityType")
+        const populatedAidData = await aidCreated.populate(["calamityType","aidRequestedBy"])
 
         return res.status(201).json({
             success: true,
@@ -57,6 +61,7 @@ export const addAidRequest = async (req, res) => {
         })
 
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             success: false,
             message: "Internal Server Error"
@@ -65,11 +70,22 @@ export const addAidRequest = async (req, res) => {
 };
 
 export const getAllAidRequests = async (req, res)=>{
-    const aidRequest = await AidRequest.find().lean();
+    try {
+        const aidRequest = await AidRequest.find().lean();
+        console.log(aidRequest)
+        return res.status(200).json({
+            success:true,
+            message:aidRequest
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        })
+    }
 
-    console.log(aidRequest)
-
-    return res.status(200).json(aidRequest);
+    
 }
 
 
