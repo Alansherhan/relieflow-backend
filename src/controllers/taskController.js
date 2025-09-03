@@ -46,3 +46,35 @@ export const getAllTasks=async(req,res)=>{
     })
   }
 };
+export const deletTask=async (req,res)=>{
+    const {id}=req.params;
+
+    try{
+        if (!id){
+            return res.status(403).json({
+                success:false,
+                message:'id required'
+        })
+        }
+        const deletedTask=await TaskSchema.findOne(id);
+        if(!deletedTask){
+            return res.status(201).json({
+                success:false,
+                message:'Data not found'
+        })
+    }
+    await deletedTask.deleteOne();
+    console.log(deletedTask);
+    return res.status(201).json({
+            message:"Deleted Successfully",
+            success:true
+        })
+}
+catch(err){
+    console.log(err)
+        return res.status(500).json({
+            success:false,
+            message:"Unable to delete"
+         });
+}
+}

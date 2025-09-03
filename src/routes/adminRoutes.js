@@ -3,7 +3,7 @@ import { group } from "../utils/routerUtils.js";
 import { adminSignUp } from "../controllers/adminUserController.js";
 import { getAllCalamityTypes, addCalamity } from "../controllers/calamityTypeController.js";
 import { getAllAidRequests, addAidRequest, getAidRequest, deleteAidRequest } from "../controllers/aidRequestController.js";
-import { assignTask, getAllTasks } from "../controllers/taskController.js";
+import { assignTask, deletTask, getAllTasks } from "../controllers/taskController.js";
 import { addCenter, deleteReliefCenter, getAllReliefCenters } from "../controllers/reliefCenterController.js";
 
 
@@ -32,6 +32,7 @@ export function adminRoutes(router) {
         (taskrouter)=>{
             taskrouter.post("/assign",assignTask)
             taskrouter.get("/",getAllTasks)
+            taskrouter.delete("/delete/:id",deletTask)
         },
         router
     );
