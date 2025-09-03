@@ -44,3 +44,35 @@ export const getAllDonationRequests=async(req,res)=>{
         })
     }
 }
+export const deleteDonationRequest= async (req,res)=>{
+    const {id}=req.params;
+
+    try{
+        if (!id){
+            return res.status(403).json({
+                success:false,
+                message:'id required'
+        })
+        }
+        const deletedRequest=await DonationRequest.findById(id);
+        if(!deletedRequest){
+            return res.status(201).json({
+                success:false,
+                message:'Data not found'
+        })
+        }
+        await deletedRequest.deleteOne();
+        console.log(deletedRequest);
+        return res.status(201).json({
+            message:"Deleted Successfully",
+            success:true
+        })
+    }
+    catch(err){
+        console.log(err)
+        return res.status(500).json({
+            success:false,
+            message:"Unable to delete"
+         });
+    }
+}
