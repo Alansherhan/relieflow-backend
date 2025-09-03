@@ -1,8 +1,10 @@
 import { group } from "../utils/routerUtils.js";
 
 import { adminSignUp } from "../controllers/adminUserController.js";
-import { getAllCalamityTypes, addCalamity } from "../controllers/calamityTypeController.js";
+import { getAllCalamityTypes, addCalamity, deleteCalamityType } from "../controllers/calamityTypeController.js";
 import { getAllAidRequests, addAidRequest, getAidRequest, deleteAidRequest } from "../controllers/aidRequestController.js";
+
+import { addCenter, deleteReliefCenter, getAllReliefCenters, getReliefCenter } from "../controllers/reliefCenterController.js";
 import { assignTask, deletTask, getAllTasks } from "../controllers/taskController.js";
 import { addCenter, deleteReliefCenter, getAllReliefCenters } from "../controllers/reliefCenterController.js";
 
@@ -14,6 +16,7 @@ export function adminRoutes(router) {
         (calamityRouter) => {
             calamityRouter.post("/add", addCalamity);
             calamityRouter.get('/', getAllCalamityTypes);
+            calamityRouter.delete('/delete/:id',deleteCalamityType);
         },
         router,
     );
@@ -40,6 +43,7 @@ export function adminRoutes(router) {
         '/center',
         (centerRouter)=>{
             centerRouter.post("/add",addCenter)
+            centerRouter.get("/:id",getReliefCenter)
             centerRouter.get("/",getAllReliefCenters)
             centerRouter.delete("/delete/:id",deleteReliefCenter)
         },
