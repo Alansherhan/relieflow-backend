@@ -101,9 +101,9 @@ export const deleteAidRequest =  async (req,res) => {
         }
         const deletedAid=await AidRequest.findById(id);
         if(!deletedAid){
-            return res.status(201).json({
+            return res.status(404).json({
                 success:false,
-                message:'Database is empty'
+                message:'Data not found'
             })
         }
         await deletedAid.deleteOne();

@@ -1,4 +1,5 @@
 import ReliefCenter from '../models/ReliefCenter.js';
+
 export const addCenter = async (req, res) => {
   // res.status(201).json({ name: ""})
   const shelterName = req.body.shelterName;
@@ -61,7 +62,7 @@ export const deleteReliefCenter = async (req, res) => {
     }
     const deletedCenter = await ReliefCenter.findById(id);
     if (!deletedCenter) {
-      return res.status(201).json({
+      return res.status(404).json({
         success: false,
         message: 'Database is empty',
       });
@@ -79,5 +80,26 @@ export const deleteReliefCenter = async (req, res) => {
       success: false,
       message: 'Unable to delete',
     });
+  }
+};
+
+
+export const getReliefCenter=async(req,res)=>{
+  const {id}=req.params;
+  try{
+    const reliefCenter=await ReliefCenter.findById(id)
+
+    return res.status(201).json({
+      success:true,
+      message:"Relief Center Retrieved",
+      data:reliefCenter
+    })
+  }
+  catch(error){
+    console.log(error)
+    return res.status(500).json({
+      success:false,
+      message:error
+    })
   }
 };

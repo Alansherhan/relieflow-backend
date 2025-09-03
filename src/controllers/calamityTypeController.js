@@ -38,3 +38,35 @@ export const getAllCalamityTypes = async (req, res)=>{
         })
     }
 }
+
+export const deleteCalamityType=async(req,res)=>{
+    const {id}=req.params;
+    try{
+        if(!id){
+            return res.status(403).json({
+                success:false,
+                message:'id required'
+            })
+        }
+        const deletedCalamityType=await CalamityType.findById(id);
+        if(!deletedCalamityType){
+            return res.status(404).json({
+                success:false,
+                message:"Data not found"
+            })
+        }
+        await deletedCalamityType.deleteOne();
+        console.log(deletedCalamityType);
+        return res.status(201).json({
+            success:true,
+            message:"Deleted Successfully"
+        })
+    }
+    catch(error){
+        console.log(error)
+        return res.status(500).json({
+            success:false,
+            message:"Unable to delete"
+        })
+    }
+}
