@@ -4,15 +4,15 @@ export const addDonationRequest = async (req, res) => {
     const requestedBy = req.body.requestedBy;
     const itemDetails= req.body.itemDetails;
     const amount=req.body.amount;
-
+    const donationType=req.body.donationType;
     try {
         const donationRequest = await DonationRequest.create({
             requestedBy: requestedBy,
-            donationType: "item",
+            donationType: donationType,
             itemDetails:itemDetails,
             amount:amount,
             priority: "low",
-            status: "accepted"
+            status: "pending"
         })
 
         return res.status(201).json({
