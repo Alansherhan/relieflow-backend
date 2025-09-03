@@ -1,7 +1,7 @@
 import { login, signUp } from "../controllers/userProfileController.js"
 import { addDonationRequest, deleteDonationRequest, getAllDonationRequests } from "../controllers/donationRequestController.js"
 import { addDonation, getAllDonations } from "../controllers/donationController.js"
-import {  protect } from "../middleWare/authMiddleware.js"
+// import {  protect } from "../middleWare/authMiddleware.js"
 import { group } from "../utils/routerUtils.js"
 
 export function publicUserRoutes(router) {
@@ -11,8 +11,12 @@ export function publicUserRoutes(router) {
         // rootRouter.use(protect(['public']));
         rootRouter.post("/request/add",addDonationRequest)
         rootRouter.get("/request/",getAllDonationRequests)
+<<<<<<< HEAD
         rootRouter.delete("request/delete/:id",deleteDonationRequest)
        
+=======
+        rootRouter.delete("/request/:id",deleteDonationRequest)
+>>>>>>> e0510bf42addcc2efaba62d3e0fc6bd723dc17d2
         rootRouter.post("/donate",addDonation)
         rootRouter.get("/",getAllDonations)
     }, router);
