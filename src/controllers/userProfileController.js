@@ -50,7 +50,7 @@ export const login = async (req, res) => {
         success: false,
     }
 
-    console.log(userLogin)
+    // console.log(userLogin)
 
     if (!userLogin) {
       return res.status(401).json(errorResponse);
