@@ -50,10 +50,15 @@ export const login = async (req, res) => {
         success: false,
     }
 
+    console.log(userLogin)
+
     if (!userLogin) {
       return res.status(401).json(errorResponse);
     }
-    const isPasswordMatched = bcrypt.compare(password, userLogin.password);
+    const isPasswordMatched = await bcrypt.compare(password, userLogin.password);
+    // console.log(isPasswordMatched)
+    // console.log(password)
+    // console.log(userLogin.password)
 
     if (!isPasswordMatched) {
       return res.status(401).json(errorResponse);
