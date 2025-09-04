@@ -6,7 +6,6 @@ import { getAllAidRequests, addAidRequest, getAidRequest, deleteAidRequest } fro
 
 import { addCenter, deleteReliefCenter, getAllReliefCenters, getReliefCenter } from "../controllers/reliefCenterController.js";
 import { assignTask, deletTask, getAllTasks } from "../controllers/taskController.js";
-import { addCenter, deleteReliefCenter, getAllReliefCenters } from "../controllers/reliefCenterController.js";
 
 
 export function adminRoutes(router) {
