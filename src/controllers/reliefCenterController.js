@@ -103,3 +103,43 @@ export const getReliefCenter=async(req,res)=>{
     })
   }
 };
+export const updateReliefCenter=async (req,res)=>{
+  try{
+    const {id}=req.params;
+
+    const {shelterName,address,coordinatorName,coordinatorNumber}=req.body
+    if(!id){
+      return res.status(403).json({
+        success: false,
+        message: 'id required',
+      });
+    }
+
+    const data=await ReliefCenter.findById(id);
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: 'Data not available',
+      });
+    }
+
+    data.shelterName=shelterName 
+    data.address=address
+    data.coordinatorName=coordinatorName
+    data.coordinatorNumber=coordinatorNumber
+    
+    await data.save()
+    console.log("Data Updated Successfully",data)
+    return res.status(201).json({
+      success:true,
+      message:"Data Updated Successfully"
+    })
+  }
+  catch(error){
+    console.log(error)
+    return res.status(500).json({
+      success:false,
+      message:"Unable to update data"
+    })
+  }
+}
