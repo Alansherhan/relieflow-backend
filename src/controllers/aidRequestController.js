@@ -88,7 +88,6 @@ export const getAllAidRequests = async (req, res)=>{
     
 }
 
-
 export const deleteAidRequest =  async (req,res) => {
     const { id } = req.params;
 
