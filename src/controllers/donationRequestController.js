@@ -57,7 +57,7 @@ try{
       });
     }
 
-    const data =await DonationRequest.findOne(id);
+    const data =await DonationRequest.findById(id);
 
     if (!data) {
         return res.status(404).json({

@@ -4,7 +4,7 @@ import { adminSignUp } from "../controllers/adminUserController.js";
 import { getAllCalamityTypes, addCalamity, deleteCalamityType } from "../controllers/calamityTypeController.js";
 import { getAllAidRequests, addAidRequest, getAidRequest, deleteAidRequest } from "../controllers/aidRequestController.js";
 import { assignTask, deleteTask, getAllTasks } from "../controllers/taskController.js";
-import { addCenter, deleteReliefCenter, getAllReliefCenters, getReliefCenter } from "../controllers/reliefCenterController.js";
+import { addCenter, deleteReliefCenter, getAllReliefCenters, getReliefCenter, updateReliefCenter } from "../controllers/reliefCenterController.js";
 
 
 
@@ -44,6 +44,7 @@ export function adminRoutes(router) {
             centerRouter.post("/add",addCenter)
             centerRouter.get("/:id",getReliefCenter)
             centerRouter.get("/",getAllReliefCenters)
+            centerRouter.put("/:id",updateReliefCenter)
             centerRouter.delete("/delete/:id",deleteReliefCenter)
         },
         router
