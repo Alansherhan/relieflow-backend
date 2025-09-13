@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { locationSchema } from "./common.js"
+import { addressSchema, locationSchema } from "./common.js"
 
 const aidRequestSchema = new mongoose.Schema({
     calamityType: {
@@ -7,9 +7,13 @@ const aidRequestSchema = new mongoose.Schema({
         required: true,
         ref: "CalamityType"
     },
-    location: {
-        type: locationSchema
+    address:{
+        type:addressSchema,
+        required:true
     },
+    // location: {
+    //     type: locationSchema
+    // },
     imageUrl: {
         type: String,
         required:false
