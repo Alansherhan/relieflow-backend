@@ -37,4 +37,26 @@ const userSchema=new mongoose.Schema({
     }
 })
 
+
+// Create virtual field for formatted address
+userSchema.virtual('formattedAddress').get(function () {
+  const { address } = this
+  if (!address) return ''
+
+  const parts = [
+    address.addressLine1,
+    address.addressLine2,
+    address.addressLine3
+  ].filter(line => line && line.trim() !== '')
+
+  const pin = address.pinCode ? `– ${address.pinCode}` : ''
+
+  return parts.join(', ') + ' ' + pin
+});
+
+// Ensure virtuals are serialized
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
+
+
 export default mongoose.model("userProfile",userSchema)

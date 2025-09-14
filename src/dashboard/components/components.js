@@ -10,6 +10,7 @@ const componentLoader = new ComponentLoader()
 
 const Components = {
     LinkComponent: componentLoader.add('LinkComponent', path.join(__dirname,'LinkComponent')),
+    VolunteerFilteredSelect: componentLoader.add('VolunteerFilteredSelect', path.join(__dirname, 'VolunteerFilteredSelect'))
     // other custom components
 }
 

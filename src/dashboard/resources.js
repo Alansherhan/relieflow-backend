@@ -27,8 +27,30 @@ export const AidRequestResource = {
         isVisible: false, // This hides the 'id' property everywhere
       },
       location: {
+        isVisible:{
+          new: false,
+          edit: false
+        },
         components: {
           list: Components.LinkComponent,
+        },
+      },
+      formattedAddress: {
+        isVisible: { list: true, filter: false, show: true, edit: false },
+      },
+      address: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+      },
+      
+    },
+    translations: {
+      en: {
+        labels: {
+          AidRequest: 'Aid Request', // Resource name override
+        },
+        properties: {
+          formattedAddress: 'Address', // Global label for property across all resources
+          address: 'Raw Address',
         },
       },
     },
@@ -74,16 +96,17 @@ export const ReliefCenterResource = {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
     },
-    translations:{
- en: {
-    labels: {
-      ReliefCenter: 'Relief Centers', // Resource name override
+    translations: {
+      en: {
+        labels: {
+          ReliefCenter: 'Relief Centers', // Resource name override
+        },
+        properties: {
+          formattedAddress: 'Address', // Global label for property across all resources
+          address: 'Raw Address',
+        },
+      },
     },
-    properties: {
-      formattedAddress: 'Address',   // Global label for property across all resources
-      address: 'Raw Address',
-    },}
-    }
   },
 };
 
@@ -92,6 +115,22 @@ export const TaskResource = {
   options: {
     properties: {
       _id: { isVisible: false },
+      assignedTo:{
+        components:{
+          edit: Components.VolunteerFilteredSelect
+        }
+      }
+    },
+    translations: {
+      en: {
+        labels: {
+          Task: 'Task', // Resource name override
+        },
+        // properties: {
+        //   formattedAddress: 'Address', // Global label for property across all resources
+        //   address: 'Raw Address',
+        // },
+      },
     },
   },
 };
@@ -102,6 +141,23 @@ export const UserProfileResource = {
     properties: {
       _id: { isVisible: false },
       password: { isVisible: false },
+      formattedAddress: {
+        isVisible: { list: true, filter: false, show: true, edit: false },
+      },
+      address: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+      },
+    },
+    translations: {
+      en: {
+        labels: {
+          userProfile: 'Users', // Resource name override
+        },
+        properties: {
+          formattedAddress: 'Address', // Global label for property across all resources
+          address: 'Raw Address',
+        },
+      },
     },
   },
 };

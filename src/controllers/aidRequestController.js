@@ -34,7 +34,9 @@ export const addAidRequest = async (req, res) => {
     //const location=req.body.location;
     const aidRequestedBy=req.body.aidRequestedBy;
 
-    if (!calamityType || !location){
+    console.log(req.body)
+
+    if (!calamityType || !address){
         return res.status(422).json(
             {
                 success: false,
