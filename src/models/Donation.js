@@ -7,7 +7,8 @@ import { itemSchema } from "./common.js";
 const donationSchema = new mongoose.Schema({
     donatedBy: {
         type: String,
-        required:false
+        required:false,
+        default: 'Anonymous'
     },
     donationType: {
         type: String,
@@ -30,8 +31,10 @@ const donationSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ["accepted", "pending", "rejected"]
+        enum: ["accepted", "pending", "rejected","completed"]
     }
 })
+
+
 
 export default mongoose.model("DonationSchema",donationSchema)

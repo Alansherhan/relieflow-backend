@@ -10,8 +10,8 @@ export const assignTask = async (req, res) => {
         const taskAssigned=await TaskSchema.create({
             taskName:taskName,
             taskType:taskType,
-            status:"accepted",
-            priority:"high",
+            status:"pending",
+            priority:"low",
             assignedTo:assignedTo,
             donationRequest:donationRequest
         })

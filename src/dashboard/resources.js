@@ -1,3 +1,4 @@
+import { components } from 'react-select';
 import adminUser from '../models/adminUser.js';
 import AidRequest from '../models/AidRequest.js';
 import CalamityType from '../models/CalamityType.js';
@@ -7,6 +8,7 @@ import ReliefCenter from '../models/ReliefCenter.js';
 import Task from '../models/Task.js';
 import userProfile from '../models/userProfile.js';
 import { Components } from './components/components.js';
+import { name } from '@adminjs/express';
 
 export const AdminResource = {
   resource: adminUser,
@@ -27,9 +29,9 @@ export const AidRequestResource = {
         isVisible: false, // This hides the 'id' property everywhere
       },
       location: {
-        isVisible:{
+        isVisible: {
           new: false,
-          edit: false
+          edit: false,
         },
         components: {
           list: Components.LinkComponent,
@@ -41,7 +43,6 @@ export const AidRequestResource = {
       address: {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
-      
     },
     translations: {
       en: {
@@ -71,7 +72,30 @@ export const DonationResource = {
   options: {
     properties: {
       _id: { isVisible: false },
+      amount: {
+        isVisible: {
+          list: false, // hide in list
+          filter: true, // allow filtering
+          show: true, // visible in details
+          edit: true, // editable in form
+        },
+      },
+      itemDetails: {
+        isVisible: {
+          list: false, // hide in list
+          filter: true, // allow filtering
+          show: true, // visible in details
+          edit: true, // editable in form
+        },
+      },
     },
+    translations: {
+        en: {
+          labels: {
+            DonationSchema: 'Donations', // Resource name override
+          },
+        },
+      },
   },
 };
 
@@ -80,6 +104,22 @@ export const DonationRequestResource = {
   options: {
     properties: {
       _id: { isVisible: false },
+      amount: {
+        isVisible: {
+          list: false, // hide in list
+          filter: true, // allow filtering
+          show: true, // visible in details
+          edit: true, // editable in form
+        },
+      },
+      itemDetails: {
+        isVisible: {
+          list: false, // hide in list
+          filter: true, // allow filtering
+          show: true, // visible in details
+          edit: true, // editable in form
+        },
+      },
     },
   },
 };
@@ -115,23 +155,31 @@ export const TaskResource = {
   options: {
     properties: {
       _id: { isVisible: false },
-      assignedTo:{
-        components:{
-          edit: Components.VolunteerFilteredSelect
-        }
+      aidRequest: {
+        reference: 'AidRequest', // Must match the resource ID you registered
+        components: {
+        edit:Components.StatusFilteredSelect,
       }
+      },
+      donationRequest: {
+        reference: 'DonationRequest',
+        components: {
+          edit: Components.DonationRequestStatusFilteredSelect
+        }
+      },
+      assignedTo: {
+        components: {
+          edit: Components.VolunteerFilteredSelect,
+        },
+      },
     },
     translations: {
       en: {
         labels: {
-          Task: 'Task', // Resource name override
+          TaskSchema:"Task", // Resource name override
         },
-        // properties: {
-        //   formattedAddress: 'Address', // Global label for property across all resources
-        //   address: 'Raw Address',
-        // },
-      },
     },
+  },
   },
 };
 
@@ -147,6 +195,15 @@ export const UserProfileResource = {
       address: {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
+      deletedAt:{
+        isVisible:{ list: false, filter: false, show: true, edit: true},
+      },
+      createdAt:{
+        isVisible:{ list: false, filter: false, show: true, edit: true},
+      },
+      updatedAt:{
+        isVisible:{ list: false, filter: false, show: true, edit: true},
+      }
     },
     translations: {
       en: {

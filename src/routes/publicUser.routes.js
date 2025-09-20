@@ -1,4 +1,4 @@
-import { login, signUp, updateProfile } from "../controllers/userProfileController.js"
+import { deleteUser, login, signUp, updateProfile } from "../controllers/userProfileController.js"
 import { addDonationRequest, deletedDonationRequest, getAllDonationRequests, updateDonationRequest } from "../controllers/donationRequestController.js"
 import { addDonation, getAllDonations } from "../controllers/donationController.js"
 import {  protect } from "../middleWare/authMiddleware.js"
@@ -8,6 +8,7 @@ export function publicUserRoutes(router) {
     router.post('/signup', signUp)
     router.post("/login",login)
     router.put('/:id',updateProfile)
+    router.delete('/:id',deleteUser)
     group("/donation", (rootRouter)=>{
         // rootRouter.use(protect(['public']));
         rootRouter.post("/request/add",addDonationRequest)

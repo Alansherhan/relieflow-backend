@@ -12,7 +12,7 @@ export const addDonationRequest = async (req, res) => {
             itemDetails:itemDetails,
             amount:amount,
             priority: "low",
-            status: "accepted"
+            status: "pending"
         })
 
         return res.status(201).json({

@@ -131,3 +131,36 @@ export const updateProfile=async(req,res)=>{
     })
   }
 }
+
+export const deleteUser=async(req,res)=>{
+  const { id } = req.params;
+  
+    try {
+      if (!id) {
+        return res.status(403).json({
+          success: false,
+          message: 'id required',
+        });
+      }
+      const deletedUser = await User.findById(id);
+      if (!deletedUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Database is empty',
+        });
+      }
+      await deletedUser.deleteOne();
+      console.log(deletedUser);
+      return res.status(201).json({
+        success: true,
+        message: 'Deleted Sucessfully',
+      });
+    } 
+    catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to delete',
+      });
+    }
+}
