@@ -7,14 +7,6 @@ import AdminJS from 'adminjs';
 import * as AdminJSMongoose from '@adminjs/mongoose';
 import AdminJSExpress from '@adminjs/express';
 
-import adminUser from './src/models/adminUser.js';
-import AidRequest from './src/models/AidRequest.js';
-import CalamityType from './src/models/CalamityType.js';
-import Donation from './src/models/Donation.js';
-import DonationRequest from './src/models/DonationRequest.js';
-import ReliefCenter from './src/models/ReliefCenter.js';
-import Task from './src/models/Task.js';
-import userProfile from './src/models/userProfile.js';
 import {
   AdminResource,
   AidRequestResource,

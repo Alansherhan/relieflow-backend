@@ -1,5 +1,5 @@
 import { components } from 'react-select';
-import adminUser from '../models/adminUser.js';
+import Admin from '../models/adminUser.js';
 import AidRequest from '../models/AidRequest.js';
 import CalamityType from '../models/CalamityType.js';
 import Donation from '../models/Donation.js';
@@ -11,7 +11,7 @@ import { Components } from './components/components.js';
 import { name } from '@adminjs/express';
 
 export const AdminResource = {
-  resource: adminUser,
+  resource: Admin,
   options: {
     properties: {
       password: { isVisible: false },
@@ -90,12 +90,12 @@ export const DonationResource = {
       },
     },
     translations: {
-        en: {
-          labels: {
-            DonationSchema: 'Donations', // Resource name override
-          },
+      en: {
+        labels: {
+          DonationSchema: 'Donations', // Resource name override
         },
       },
+    },
   },
 };
 
@@ -158,14 +158,14 @@ export const TaskResource = {
       aidRequest: {
         reference: 'AidRequest', // Must match the resource ID you registered
         components: {
-        edit:Components.StatusFilteredSelect,
-      }
+          edit: Components.StatusFilteredSelect,
+        },
       },
       donationRequest: {
         reference: 'DonationRequest',
         components: {
-          edit: Components.DonationRequestStatusFilteredSelect
-        }
+          edit: Components.DonationRequestStatusFilteredSelect,
+        },
       },
       assignedTo: {
         components: {
@@ -176,10 +176,10 @@ export const TaskResource = {
     translations: {
       en: {
         labels: {
-          TaskSchema:"Task", // Resource name override
+          TaskSchema: 'Task', // Resource name override
         },
+      },
     },
-  },
   },
 };
 
@@ -195,15 +195,15 @@ export const UserProfileResource = {
       address: {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
-      deletedAt:{
-        isVisible:{ list: false, filter: false, show: true, edit: true},
+      deletedAt: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
       },
-      createdAt:{
-        isVisible:{ list: false, filter: false, show: true, edit: true},
+      createdAt: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
       },
-      updatedAt:{
-        isVisible:{ list: false, filter: false, show: true, edit: true},
-      }
+      updatedAt: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+      },
     },
     translations: {
       en: {
