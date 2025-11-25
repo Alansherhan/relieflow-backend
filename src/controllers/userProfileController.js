@@ -1,8 +1,8 @@
 import User from '../models/userProfile.js';
 import bcrypt from 'bcrypt';
 
-import jwt from 'jsonwebtoken'
-
+import jwt from 'jsonwebtoken';
+import { signupFormValidation } from '../validation/signUp.js';
 
 export const signUp = async (req, res) => {
   const name = req.body.name;
@@ -10,9 +10,23 @@ export const signUp = async (req, res) => {
   const address = req.body.address;
   const phoneNumber = req.body.phoneNumber;
   const password = req.body.password;
+<<<<<<< HEAD
   const role = req.body.role;
   
+=======
+
+  console.log('sss:::', req.body);
+  // const role = req.body.role;
+  const role = 'public';
+>>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
   try {
+    const validationResponse = signupFormValidation(req.body);
+    if (validationResponse.success === false) {
+      return res.status(422).json({
+        success: false,
+        message: validationResponse.message,
+      });
+    }
     const salt = await bcrypt.genSalt(10); // generate salt
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -26,6 +40,7 @@ export const signUp = async (req, res) => {
       skill: 'other',
     });
 
+<<<<<<< HEAD
     // Generate JWT token
     const token = jwt.sign(
       { 
@@ -36,10 +51,24 @@ export const signUp = async (req, res) => {
       process.env.JWT_SECRET, // Make sure you have this in your .env file
       { expiresIn: '7d' } // Token expires in 7 days
     );
+=======
+    //Key generation for authentication checking that takes place in middleware
+    const payload = {
+      id: userCreated._id,
+      email: userCreated.email,
+      role: userCreated.role,
+    };
+
+    //creating token
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+>>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
 
     return res.status(201).json({
       success: true,
       message: 'User Registered Successfully',
+<<<<<<< HEAD
       token: token, // Add token to response
       user: {
         id: userCreated._id,
@@ -47,6 +76,9 @@ export const signUp = async (req, res) => {
         email: userCreated.email,
         role: userCreated.role
       }
+=======
+      token,
+>>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
     });
   } catch (error) {
     console.log(error);
@@ -60,23 +92,26 @@ export const signUp = async (req, res) => {
 export const login = async (req, res) => {
   // const email = req.body.email;
   // const password = req.body.password;
-  const {email, password} = req.body
+  const { email, password } = req.body;
   try {
     const userLogin = await User.findOne({
       email: email,
     });
 
     const errorResponse = {
-        message: "Unauthorized",
-        success: false,
-    }
+      message: 'Unauthorized',
+      success: false,
+    };
 
     // console.log(userLogin)
 
     if (!userLogin) {
       return res.status(401).json(errorResponse);
     }
-    const isPasswordMatched = await bcrypt.compare(password, userLogin.password);
+    const isPasswordMatched = await bcrypt.compare(
+      password,
+      userLogin.password
+    );
     // console.log(isPasswordMatched)
     // console.log(password)
     // console.log(userLogin.password)
@@ -84,7 +119,7 @@ export const login = async (req, res) => {
     if (!isPasswordMatched) {
       return res.status(401).json(errorResponse);
     }
-//Key generation for authentication checking that takes place in middleware
+    //Key generation for authentication checking that takes place in middleware
     const payload = {
       id: userLogin._id,
       email: userLogin.email,
@@ -96,7 +131,7 @@ export const login = async (req, res) => {
       expiresIn: '1d',
     });
     return res.status(200).json({
-      message: "Login successful",
+      message: 'Login successful',
       success: true,
       token: token,
       user: userLogin,
@@ -110,11 +145,11 @@ export const login = async (req, res) => {
   }
 };
 
-export const updateProfile=async(req,res)=>{
-  try{
-    const {id} = req.params;
-    
-    const {name,address,phoneNumber}=req.body
+export const updateProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { name, address, phoneNumber } = req.body;
 
     if (!id) {
       return res.status(403).json({
@@ -122,9 +157,9 @@ export const updateProfile=async(req,res)=>{
         message: 'id required',
       });
     }
-    
-    const data= await User.findById(id);
-    
+
+    const data = await User.findById(id);
+
     if (!data) {
       return res.status(404).json({
         success: false,
@@ -132,57 +167,36 @@ export const updateProfile=async(req,res)=>{
       });
     }
 
-    data.name=name
-    data.address=address
-    data.phoneNumber=phoneNumber
+    data.name = name;
+    data.address = address;
+    data.phoneNumber = phoneNumber;
 
-    await data.save()
-    console.log("Data Updated Successfully",data)
+    await data.save();
+    console.log('Data Updated Successfully', data);
     return res.status(201).json({
-      success:true,
-      message:"Data Updated Successfully"
-    })
-  }
-  catch(error){
-    console.log(error)
+      success: true,
+      message: 'Data Updated Successfully',
+    });
+  } catch (error) {
+    console.log(error);
     return res.status(500).json({
-      success:false,
-      message:"Unable to update data"
-    })
+      success: false,
+      message: 'Unable to update data',
+    });
   }
-}
+};
 
-export const deleteUser=async(req,res)=>{
+export const deleteUser = async (req, res) => {
   const { id } = req.params;
-  
-    try {
-      if (!id) {
-        return res.status(403).json({
-          success: false,
-          message: 'id required',
-        });
-      }
-      const deletedUser = await User.findById(id);
-      if (!deletedUser) {
-        return res.status(404).json({
-          success: false,
-          message: 'Database is empty',
-        });
-      }
-      await deletedUser.deleteOne();
-      console.log(deletedUser);
-      return res.status(201).json({
-        success: true,
-        message: 'Deleted Sucessfully',
-      });
-    } 
-    catch (error) {
-      console.log(error);
-      return res.status(500).json({
+
+  try {
+    if (!id) {
+      return res.status(403).json({
         success: false,
-        message: 'Unable to delete',
+        message: 'id required',
       });
     }
+<<<<<<< HEAD
 }
 
 export const getUserProfile = async (req, res) => {
@@ -222,3 +236,26 @@ export const getUserProfile = async (req, res) => {
     });
   }
 };
+=======
+    const deletedUser = await User.findById(id);
+    if (!deletedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Database is empty',
+      });
+    }
+    await deletedUser.deleteOne();
+    console.log(deletedUser);
+    return res.status(201).json({
+      success: true,
+      message: 'Deleted Sucessfully',
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to delete',
+    });
+  }
+};
+>>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0

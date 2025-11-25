@@ -13,6 +13,10 @@ const userSchema = new mongoose.Schema(
       unique: true,
     },
     address: {
+<<<<<<< HEAD
+=======
+      // type: addressSchema,/
+>>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
       type: String,
 
       required: true,
