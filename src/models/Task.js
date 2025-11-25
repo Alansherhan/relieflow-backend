@@ -17,7 +17,7 @@ const taskSchema=new mongoose.Schema({
     status:{
         type:String,
         required:true,
-        enum:["accepted","pending","rejected"]
+        enum:["accepted","pending","rejected","completed"]
     },
     priority:{
         type:String,
@@ -28,6 +28,10 @@ const taskSchema=new mongoose.Schema({
         type:mongoose.Types.ObjectId,
         required:true,
         ref:userProfile.modelName
+    },
+    imageUrl: {
+        type: String,
+        required:false
     },
     aidRequest:{
         type:mongoose.Types.ObjectId,
@@ -40,5 +44,8 @@ const taskSchema=new mongoose.Schema({
         ref:DonationRequest.modelName
     }
 })
+
+
+
 
 export default mongoose.model("TaskSchema",taskSchema)

@@ -110,4 +110,115 @@ export const login = async (req, res) => {
   }
 };
 
+export const updateProfile=async(req,res)=>{
+  try{
+    const {id} = req.params;
+    
+    const {name,address,phoneNumber}=req.body
 
+    if (!id) {
+      return res.status(403).json({
+        success: false,
+        message: 'id required',
+      });
+    }
+    
+    const data= await User.findById(id);
+    
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: 'Data not available',
+      });
+    }
+
+    data.name=name
+    data.address=address
+    data.phoneNumber=phoneNumber
+
+    await data.save()
+    console.log("Data Updated Successfully",data)
+    return res.status(201).json({
+      success:true,
+      message:"Data Updated Successfully"
+    })
+  }
+  catch(error){
+    console.log(error)
+    return res.status(500).json({
+      success:false,
+      message:"Unable to update data"
+    })
+  }
+}
+
+export const deleteUser=async(req,res)=>{
+  const { id } = req.params;
+  
+    try {
+      if (!id) {
+        return res.status(403).json({
+          success: false,
+          message: 'id required',
+        });
+      }
+      const deletedUser = await User.findById(id);
+      if (!deletedUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Database is empty',
+        });
+      }
+      await deletedUser.deleteOne();
+      console.log(deletedUser);
+      return res.status(201).json({
+        success: true,
+        message: 'Deleted Sucessfully',
+      });
+    } 
+    catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        success: false,
+        message: 'Unable to delete',
+      });
+    }
+}
+
+export const getUserProfile = async (req, res) => {
+  try {
+    // req.user should be set by your protect middleware
+    const userId = req.user._id || req.user.id;
+    
+    const user = await User.findById(userId).select('-password'); // ✅ Correct
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        skill: user.skill,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching user profile',
+      error: error.message 
+    });
+  }
+};

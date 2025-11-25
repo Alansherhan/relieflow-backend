@@ -9,8 +9,8 @@ export const addDonation = async (req, res) => {
             donatedBy: donatedBy,
             donationType: "item",
             itemDetails: itemDetails,
-            priority: "high",
-            status: "accepted"
+            priority: "low",
+            status: "pending"
         })
 
         return res.status(201).json({

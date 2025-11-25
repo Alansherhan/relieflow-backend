@@ -30,10 +30,13 @@ export const addAidRequest = async (req, res) => {
 
     // const {calamityType , location , imageUrl ,aidRequestedBy} = req.body
     const calamityType=req.body.calamityType;
-    const location=req.body.location;
+    const address=req.body.address;
+    //const location=req.body.location;
     const aidRequestedBy=req.body.aidRequestedBy;
 
-    if (!calamityType || !location){
+    console.log(req.body)
+
+    if (!calamityType || !address){
         return res.status(422).json(
             {
                 success: false,
@@ -45,7 +48,8 @@ export const addAidRequest = async (req, res) => {
     try {
         const aidCreated = await AidRequest.create({
             calamityType: calamityType,
-            location: location,
+            address:address,
+           // location: location,
             // imageUrl: imageUrl,
             status: "pending",
             priority: "low",
@@ -87,7 +91,6 @@ export const getAllAidRequests = async (req, res)=>{
 
     
 }
-
 
 export const deleteAidRequest =  async (req,res) => {
     const { id } = req.params;

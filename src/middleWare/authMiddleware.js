@@ -19,6 +19,7 @@ export const protect = (roles = []) => {
 
       // Attach user to the request
       req.user = payload.user;
+      req.user=payload;
 
       // 3. Check for roles (Authorization)
       // If roles are provided, check if the user has one of them
