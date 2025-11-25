@@ -11,6 +11,7 @@ export const signUp = async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   const password = req.body.password;
   const role = req.body.role;
+  
   try {
     const salt = await bcrypt.genSalt(10); // generate salt
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -25,9 +26,27 @@ export const signUp = async (req, res) => {
       skill: 'other',
     });
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        id: userCreated._id, 
+        email: userCreated.email,
+        role: userCreated.role 
+      },
+      process.env.JWT_SECRET, // Make sure you have this in your .env file
+      { expiresIn: '7d' } // Token expires in 7 days
+    );
+
     return res.status(201).json({
       success: true,
       message: 'User Registered Successfully',
+      token: token, // Add token to response
+      user: {
+        id: userCreated._id,
+        name: userCreated.name,
+        email: userCreated.email,
+        role: userCreated.role
+      }
     });
   } catch (error) {
     console.log(error);
@@ -36,6 +55,7 @@ export const signUp = async (req, res) => {
     });
   }
 };
+
 
 export const login = async (req, res) => {
   // const email = req.body.email;
