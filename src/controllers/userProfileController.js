@@ -164,3 +164,41 @@ export const deleteUser=async(req,res)=>{
       });
     }
 }
+
+export const getUserProfile = async (req, res) => {
+  try {
+    // req.user should be set by your protect middleware
+    const userId = req.user._id || req.user.id;
+    
+    const user = await User.findById(userId).select('-password'); // ✅ Correct
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        skill: user.skill,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching user profile',
+      error: error.message 
+    });
+  }
+};
