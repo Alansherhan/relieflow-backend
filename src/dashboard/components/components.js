@@ -8,14 +8,34 @@ import { ComponentLoader } from 'adminjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const componentLoader = new ComponentLoader()
+const componentLoader = new ComponentLoader();
 
 const Components = {
-    LinkComponent: componentLoader.add('LinkComponent', path.join(__dirname,'LinkComponent')),
-    VolunteerFilteredSelect: componentLoader.add('VolunteerFilteredSelect', path.join(__dirname, 'VolunteerFilteredSelect')),
-    StatusFilteredSelect:componentLoader.add('StatusFilteredSelect', path.join(__dirname, 'AidRequestStatusFilteredSelect')),
-    DonationRequestStatusFilteredSelect:componentLoader.add('DonationRequestStatusFilteredSelect', path.join(__dirname, 'DonationRequestStatusFilteredSelect')),
-    // other custom components
-}
+  Dashboard: componentLoader.add(
+    'Dashboard',
+    path.join(__dirname, 'Dashboard')
+  ),
 
-export { componentLoader, Components }
+  LinkComponent: componentLoader.add(
+    'LinkComponent',
+    path.join(__dirname, 'LinkComponent')
+  ),
+  VolunteerFilteredSelect: componentLoader.add(
+    'VolunteerFilteredSelect',
+    path.join(__dirname, 'VolunteerFilteredSelect')
+  ),
+  StatusFilteredSelect: componentLoader.add(
+    'StatusFilteredSelect',
+    path.join(__dirname, 'AidRequestStatusFilteredSelect')
+  ),
+  DonationRequestStatusFilteredSelect: componentLoader.add(
+    'DonationRequestStatusFilteredSelect',
+    path.join(__dirname, 'DonationRequestStatusFilteredSelect')
+  ),
+  LoginComponent: componentLoader.add(
+    'LoginComponent',
+    path.join(__dirname, 'LoginComponent')
+  ),
+};
+
+export { componentLoader, Components };
