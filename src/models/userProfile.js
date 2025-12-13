@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { addressSchema } from './common.js';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -52,6 +53,16 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+//matchpassword
+// ... existing schema code ...
+
+// 1. ADD THIS METHOD (This is what is missing!)
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// ... existing virtuals code ...
+
 // Create virtual field for formatted address
 userSchema.virtual('formattedAddress').get(function () {
   const { address } = this;
@@ -73,3 +84,5 @@ userSchema.set('toJSON', { virtuals: true });
 userSchema.set('toObject', { virtuals: true });
 
 export default mongoose.model('userProfile', userSchema);
+
+
