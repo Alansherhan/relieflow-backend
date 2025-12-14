@@ -123,47 +123,62 @@ export const login = async (req, res) => {
   }
 };
 
-export const updateProfile=async(req,res)=>{
-  try{
-    const {id} = req.params;
+export const updateProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
     
-    const {name,address,phoneNumber}=req.body
+    // SAFETY CHECK: Ensure req.body exists
+    if (!req.body) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "No data received. Ensure Content-Type is multipart/form-data" 
+      });
+    }
+
+    const { name, address, phoneNumber, email, skill } = req.body;
 
     if (!id) {
-      return res.status(403).json({
-        success: false,
-        message: 'id required',
-      });
+      return res.status(403).json({ success: false, message: 'ID required' });
     }
     
-    const data= await User.findById(id);
+    const user = await User.findById(id);
     
-    if (!data) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data not available',
-      });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    data.name=name
-    data.address=address
-    data.phoneNumber=phoneNumber
+    // Update fields if they exist in the request
+    if (name) user.name = name;
+    if (address) user.address = address;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (email) user.email = email;
+    if (skill) user.skill = skill;
 
-    await data.save()
-    console.log("Data Updated Successfully",data)
-    return res.status(201).json({
-      success:true,
-      message:"Data Updated Successfully"
-    })
-  }
-  catch(error){
-    console.log(error)
+    // HANDLE IMAGE UPLOAD
+    if (req.file) {
+      // req.file.path contains the location (e.g., "uploads/image.jpg")
+      // Normalize path for different OS (Windows uses backslashes)
+      user.profileImage = req.file.path.replace(/\\/g, "/");
+    }
+
+    await user.save();
+    
+    console.log("Data Updated Successfully:", user);
+    
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: user
+    });
+
+  } catch (error) {
+    console.log("Update Error:", error);
     return res.status(500).json({
-      success:false,
-      message:"Unable to update data"
-    })
+      success: false,
+      message: "Unable to update data: " + error.message
+    });
   }
-}
+};
 
 export const deleteUser=async(req,res)=>{
   const { id } = req.params;
@@ -223,7 +238,8 @@ export const getUserProfile = async (req, res) => {
         role: user.role,
         skill: user.skill,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
+        profileImage: user.profileImage
       }
     });
   } catch (error) {

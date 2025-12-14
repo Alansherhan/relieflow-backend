@@ -35,15 +35,17 @@ import {
 } from './src/dashboard/components/components.js';
 
 dotenv.config();
+const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+//handle image uploads
 
 const db = mongoose
   .connect(process.env.MONGO_URL)
@@ -197,6 +199,8 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
 
 // Mount admin router
 app.use(adminJS.options.rootPath, adminRouter);
+
+
 
 app.use('/', router);
 
