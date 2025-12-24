@@ -23,8 +23,10 @@ import {
   AdminResource,
   AidRequestResource,
   CalamityTypeResource,
+  DisasterTipsResource,
   DonationRequestResource,
   DonationResource,
+  QuizQuestionResource,
   ReliefCenterResource,
   TaskResource,
   UserProfileResource,
@@ -40,7 +42,6 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -66,6 +67,8 @@ const adminOptions = {
     ReliefCenterResource,
     TaskResource,
     UserProfileResource,
+    DisasterTipsResource,
+    QuizQuestionResource,
   ],
   rootPath: '/dashboard',
 
@@ -199,8 +202,6 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
 
 // Mount admin router
 app.use(adminJS.options.rootPath, adminRouter);
-
-
 
 app.use('/', router);
 

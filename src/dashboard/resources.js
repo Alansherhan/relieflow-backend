@@ -9,6 +9,8 @@ import Task from '../models/Task.js';
 import userProfile from '../models/userProfile.js';
 import { Components } from './components/components.js';
 import { name } from '@adminjs/express';
+import quiz from '../models/quiz.js';
+import disasterTip from '../models/disasterTip.js';
 
 export const AdminResource = {
   resource: adminUser,
@@ -90,12 +92,12 @@ export const DonationResource = {
       },
     },
     translations: {
-        en: {
-          labels: {
-            DonationSchema: 'Donations', // Resource name override
-          },
+      en: {
+        labels: {
+          DonationSchema: 'Donations', // Resource name override
         },
       },
+    },
   },
 };
 
@@ -158,14 +160,14 @@ export const TaskResource = {
       aidRequest: {
         reference: 'AidRequest', // Must match the resource ID you registered
         components: {
-        edit:Components.StatusFilteredSelect,
-      }
+          edit: Components.StatusFilteredSelect,
+        },
       },
       donationRequest: {
         reference: 'DonationRequest',
         components: {
-          edit: Components.DonationRequestStatusFilteredSelect
-        }
+          edit: Components.DonationRequestStatusFilteredSelect,
+        },
       },
       assignedTo: {
         components: {
@@ -176,10 +178,10 @@ export const TaskResource = {
     translations: {
       en: {
         labels: {
-          TaskSchema:"Task", // Resource name override
+          TaskSchema: 'Task', // Resource name override
         },
+      },
     },
-  },
   },
 };
 
@@ -195,15 +197,15 @@ export const UserProfileResource = {
       address: {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
-      deletedAt:{
-        isVisible:{ list: false, filter: false, show: true, edit: true},
+      deletedAt: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
       },
-      createdAt:{
-        isVisible:{ list: false, filter: false, show: true, edit: true},
+      createdAt: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
       },
-      updatedAt:{
-        isVisible:{ list: false, filter: false, show: true, edit: true},
-      }
+      updatedAt: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+      },
     },
     translations: {
       en: {
@@ -213,6 +215,38 @@ export const UserProfileResource = {
         properties: {
           formattedAddress: 'Address', // Global label for property across all resources
           address: 'Raw Address',
+        },
+      },
+    },
+  },
+};
+
+export const QuizQuestionResource = {
+  resource: quiz,
+  options: {
+    properties: {
+      _id: { isVisible: false },
+    },
+    translations: {
+      en: {
+        labels: {
+          QuizSchema: 'Quiz Questions', // Resource name override
+        },
+      },
+    },
+  },
+};
+
+export const DisasterTipsResource = {
+  resource: disasterTip,
+  options: {
+    properties: {
+      _id: { isVisible: false },
+    },
+    translations: {
+      en: {
+        labels: {
+          DisasterTipSchema: 'Disaster Tips', // Resource name override
         },
       },
     },
