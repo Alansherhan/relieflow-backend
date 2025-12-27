@@ -5,9 +5,6 @@ import {
   updateProfile,
   getUserProfile,
   changePassword,
-  forgotPassword,
-  verifyResetToken,
-  resetPassword,
 } from '../controllers/userProfileController.js';
 import {
   addDonationRequest,
@@ -35,9 +32,6 @@ export function publicUserRoutes(router) {
   );
   // router.put('/update/:id',updateProfile)
   router.delete('/delete/:id', deleteUser);
-  router.post('/forgot-password', forgotPassword);
-  router.get('/verify-reset-token/:token', verifyResetToken);
-  router.post('/reset-password', resetPassword);
   router.put('/change-password', protect(), changePassword);
   group(
     '/donation',

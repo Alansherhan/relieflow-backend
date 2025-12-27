@@ -197,3 +197,36 @@ export const getBookmarkedTips = async (req, res) => {
     });
   }
 };
+
+// Get user's completed checklist items for a specific tip
+export const getCompletedItems = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { tipId } = req.params;
+
+    const progress = await UserProgress.findOne({ userId });
+
+    if (!progress) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+
+    const completedItems = progress.completedItems.filter(
+      (item) => item.tipId.toString() === tipId
+    );
+
+    res.status(200).json({
+      success: true,
+      data: completedItems,
+    });
+  } catch (error) {
+    console.error('Error fetching completed items:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching completed items',
+      error: error.message,
+    });
+  }
+};

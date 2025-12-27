@@ -13,6 +13,7 @@ import {
   toggleChecklistItem,
   saveQuizResult,
   getBookmarkedTips,
+  getCompletedItems,
 } from '../controllers/userProgressController.js';
 
 import {
@@ -50,6 +51,11 @@ export function tipsRoutes(router) {
     '/tips/checklist',
     protect(['public', 'volunteer']),
     toggleChecklistItem
+  );
+  router.get(
+    '/tips/completed/:tipId',
+    protect(['public', 'volunteer']),
+    getCompletedItems
   );
 
   // Quiz routes
