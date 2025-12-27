@@ -1,7 +1,19 @@
 import mongoose from 'mongoose';
-import { itemSchema } from './common.js';
+import { itemSchema, locationSchema, addressSchema } from './common.js';
 
 const donationRequestSchema = new mongoose.Schema({
+  // New: Title for the donation request
+  title: {
+    type: String,
+    required: true,
+    maxLength: 100,
+  },
+  // New: Description explaining why help is needed
+  description: {
+    type: String,
+    required: true,
+    maxLength: 1000,
+  },
   requestedBy: {
     type: mongoose.Types.ObjectId,
     required: true,
@@ -26,13 +38,51 @@ const donationRequestSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: ['low', 'medium', 'high'],
+    default: 'medium',
   },
   status: {
     type: String,
     required: true,
-    enum: ['accepted', 'pending', 'rejected',"completed"],
+    enum: ['accepted', 'pending', 'rejected', 'completed', 'partially_fulfilled'],
+    default: 'pending',
   },
-});
+  // Fixed: Changed from undefined imageUrl to String array
+  proofImages: [{
+    type: String,
+  }],
+  // Fixed: Made optional (only required for cash donations)
+  upiNumber: {
+    type: String,
+    required: false,
+  },
+  // New: Location for delivery/pickup
+  location: {
+    type: locationSchema,
+    required: false,
+  },
+  // New: Address details
+  address: {
+    type: addressSchema,
+    required: false,
+  },
+  // New: Deadline for when help is needed
+  deadline: {
+    type: Date,
+    required: false,
+  },
+  // New: Track partial fulfillment for cash donations
+  fulfilledAmount: {
+    type: Number,
+    default: 0,
+  },
+  // New: Link donations that fulfill this request
+  donations: [{
+    type: mongoose.Types.ObjectId,
+    ref: 'DonationSchema',
+  }],
+},
+  { timestamps: true }
+);
 
 
 donationRequestSchema.virtual('requestedUser', {
@@ -53,7 +103,7 @@ donationRequestSchema.pre('findOne', autopopulate);
 
 donationRequestSchema.virtual('name').get(function () {
   const { donationType, requestedUser } = this;
-  const userName = requestedUser.name || 'Anonymous';
+  const userName = requestedUser?.name || 'Anonymous';
 
   if(donationType === 'cash'){
     const {amount} = this;

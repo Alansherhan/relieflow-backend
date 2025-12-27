@@ -1,31 +1,88 @@
 import DonationRequest from "../models/DonationRequest.js";
 
 export const addDonationRequest = async (req, res) => {
-    const requestedBy = req.body.requestedBy;
-    const itemDetails= req.body.itemDetails;
-    const amount=req.body.amount;
+    const {
+        title,
+        description,
+        donationType,
+        amount,
+        itemDetails,
+        priority,
+        upiNumber,
+        location,
+        address,
+        deadline,
+        proofImages,
+    } = req.body;
+
+    // Get userId from JWT token (set by auth middleware)
+    const requestedBy = req.user?._id || req.user?.id;
+
+    // Validation
+    if (!requestedBy) {
+        return res.status(401).json({
+            success: false,
+            message: 'User not authenticated',
+        });
+    }
+
+    if (!title || !description || !donationType) {
+        return res.status(400).json({
+            success: false,
+            message: 'title, description, and donationType are required',
+        });
+    }
+
+    if (donationType === 'cash' && !upiNumber) {
+        return res.status(400).json({
+            success: false,
+            message: 'UPI number is required for cash donation requests',
+        });
+    }
+
+    if (donationType === 'cash' && (!amount || amount <= 0)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Amount must be greater than 0 for cash donations',
+        });
+    }
+
+    if (donationType === 'item' && (!itemDetails || itemDetails.length === 0)) {
+        return res.status(400).json({
+            success: false,
+            message: 'At least one item is required for item donation requests',
+        });
+    }
 
     try {
         const donationRequest = await DonationRequest.create({
-            requestedBy: requestedBy,
-            donationType: "item",
-            itemDetails:itemDetails,
-            amount:amount,
-            priority: "low",
-            status: "pending"
-        })
+            requestedBy,
+            title,
+            description,
+            donationType,
+            amount: donationType === 'cash' ? amount : undefined,
+            itemDetails: donationType === 'item' ? itemDetails : undefined,
+            priority: priority || 'medium',
+            upiNumber: donationType === 'cash' ? upiNumber : undefined,
+            location,
+            address,
+            deadline: deadline ? new Date(deadline) : undefined,
+            proofImages: proofImages || [],
+            status: 'pending',
+        });
 
         return res.status(201).json({
-            success:true,
-            message: donationRequest
-        })
-    }
-    catch(error){
-        console.log(error)
+            success: true,
+            message: 'Donation request created successfully',
+            data: donationRequest,
+        });
+    } catch (error) {
+        console.log(error);
         return res.status(500).json({
-            message:"Invalid Request",
-            success:false
-        })
+            message: "Failed to create donation request",
+            success: false,
+            error: error.message,
+        });
     }
 };
 

@@ -15,6 +15,7 @@ import {
 import {
   addDonation,
   getAllDonations,
+  getDonationsForRequest,
 } from '../controllers/donationController.js';
 import { protect } from '../middleWare/authMiddleware.js';
 import { group } from '../utils/routerUtils.js';
@@ -36,7 +37,7 @@ export function publicUserRoutes(router) {
   group(
     '/donation',
     (rootRouter) => {
-      // rootRouter.use(protect(['public']));
+      rootRouter.use(protect(['public']));
       rootRouter.post('/request/add', addDonationRequest);
       rootRouter.get('/request/', getAllDonationRequests);
       rootRouter.put('/update-donation/:id', updateDonationRequest);
@@ -44,6 +45,7 @@ export function publicUserRoutes(router) {
 
       rootRouter.post('/donate', addDonation);
       rootRouter.get('/', getAllDonations);
+      rootRouter.get('/request/:requestId/donations', getDonationsForRequest);
     },
     router
   );

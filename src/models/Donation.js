@@ -32,8 +32,19 @@ const donationSchema = new mongoose.Schema({
         type: String,
         required: true,
         enum: ["accepted", "pending", "rejected","completed"]
-    }
-})
+    },
+    // New: Link to the donation request this fulfills
+    donationRequest: {
+        type: mongoose.Types.ObjectId,
+        ref: 'DonationRequest',
+        required: false,
+    },
+    // New: Proof of donation
+    proofImage: {
+        type: String,
+        required: false,
+    },
+}, { timestamps: true });
 
 
 
