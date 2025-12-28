@@ -11,6 +11,7 @@ import { Components } from './components/components.js';
 import { name } from '@adminjs/express';
 import quiz from '../models/quiz.js';
 import disasterTip from '../models/disasterTip.js';
+import Notification from '../models/Notification.js';
 
 export const AdminResource = {
   resource: adminUser,
@@ -247,6 +248,25 @@ export const DisasterTipsResource = {
       en: {
         labels: {
           DisasterTipSchema: 'Disaster Tips', // Resource name override
+        },
+      },
+    },
+  },
+};
+
+export const NotificationResource = {
+  resource: Notification,
+  options: {
+    properties: {
+      _id: { isVisible: false },
+      recipientId: {
+        reference: 'userProfile',
+      },
+    },
+    translations: {
+      en: {
+        labels: {
+          Notification: 'Notifications',
         },
       },
     },

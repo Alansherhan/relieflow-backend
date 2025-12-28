@@ -30,6 +30,7 @@ import {
   ReliefCenterResource,
   TaskResource,
   UserProfileResource,
+  NotificationResource,
 } from './src/dashboard/resources.js';
 import {
   componentLoader,
@@ -69,6 +70,7 @@ const adminOptions = {
     UserProfileResource,
     DisasterTipsResource,
     QuizQuestionResource,
+    NotificationResource,
   ],
   rootPath: '/dashboard',
 

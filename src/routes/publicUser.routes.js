@@ -20,6 +20,7 @@ import {
 import { protect } from '../middleWare/authMiddleware.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
+import { getNotifications, markAsRead } from '../controllers/notificationController.js';
 
 export function publicUserRoutes(router) {
   router.post('/signup', signUp);
@@ -49,4 +50,8 @@ export function publicUserRoutes(router) {
     },
     router
   );
+
+  // Notification routes for volunteers
+  router.get('/notifications', protect(['volunteer']), getNotifications);
+  router.put('/notifications/:id/read', protect(['volunteer']), markAsRead);
 }
