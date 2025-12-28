@@ -1,9 +1,13 @@
 import Notification from '../models/Notification.js';
+import mongoose from 'mongoose';
 
 // GET /api/public/notifications - Get notifications for logged-in user
 export const getNotifications = async (req, res) => {
     try {
-        const userId = req.user._id;
+        // Use req.user.id (from JWT) - convert to ObjectId for MongoDB queries
+        const userId = new mongoose.Types.ObjectId(req.user.id);
+        console.log('========== GET NOTIFICATIONS ==========');
+        console.log('User ID:', userId);
 
         // Fetch notifications where recipientId matches user OR recipientId is null (broadcast)
         const notifications = await Notification.find({
@@ -11,16 +15,31 @@ export const getNotifications = async (req, res) => {
         })
             .sort({ createdAt: -1 })
             .limit(50)
-            .lean(); // Use lean() for better performance since we're transforming data
+            .lean();
 
-        // Transform notifications to include per-user isRead status
-        const transformedNotifications = notifications.map((notification) => ({
-            ...notification,
-            // isRead is true if the current user's ID is in the readBy array
-            isRead: notification.readBy?.some(
-                (id) => id.toString() === userId.toString()
-            ) ?? false,
-        }));
+        console.log('Found notifications:', notifications.length);
+
+        // Transform notifications to include isRead status
+        const transformedNotifications = notifications.map((notification) => {
+            const isBroadcast = notification.recipientId === null;
+
+            let isRead;
+            if (isBroadcast) {
+                isRead = notification.isReadByAll === true;
+            } else {
+                isRead =
+                    notification.readBy?.some(
+                        (id) => id.toString() === userId.toString()
+                    ) ?? false;
+            }
+
+            return {
+                ...notification,
+                isRead,
+            };
+        });
+
+        console.log('========================================');
 
         res.status(200).json({
             success: true,
@@ -36,35 +55,46 @@ export const getNotifications = async (req, res) => {
     }
 };
 
-// PUT /api/public/notifications/:id/read - Mark notification as read for current user
+// PUT /api/public/notifications/:id/read - Mark notification as read
 export const markAsRead = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.user._id;
+        const userId = new mongoose.Types.ObjectId(req.user.id);
 
-        // Add user to readBy array if not already present (using $addToSet to prevent duplicates)
-        const notification = await Notification.findOneAndUpdate(
-            {
-                _id: id,
-                $or: [{ recipientId: userId }, { recipientId: null }],
-            },
-            { $addToSet: { readBy: userId } }, // Add userId to readBy array (no duplicates)
-            { new: true }
-        ).lean();
+        const existingNotification = await Notification.findOne({
+            _id: id,
+            $or: [{ recipientId: userId }, { recipientId: null }],
+        });
 
-        if (!notification) {
+        if (!existingNotification) {
             return res.status(404).json({
                 success: false,
                 message: 'Notification not found',
             });
         }
 
-        // Return with computed isRead for this user
+        let notification;
+        const isBroadcast = existingNotification.recipientId === null;
+
+        if (isBroadcast) {
+            notification = await Notification.findByIdAndUpdate(
+                id,
+                { isReadByAll: true },
+                { new: true }
+            ).lean();
+        } else {
+            notification = await Notification.findByIdAndUpdate(
+                id,
+                { $addToSet: { readBy: userId } },
+                { new: true }
+            ).lean();
+        }
+
         res.status(200).json({
             success: true,
             data: {
                 ...notification,
-                isRead: true, // Since we just marked it, it's definitely read
+                isRead: true,
             },
         });
     } catch (error) {

@@ -261,12 +261,25 @@ export const NotificationResource = {
       _id: { isVisible: false },
       recipientId: {
         reference: 'userProfile',
+        isVisible: { list: true, filter: true, show: true, edit: true },
+      },
+      readBy: {
+        reference: 'userProfile',
+        isVisible: { list: false, filter: false, show: true, edit: false },
+      },
+      isReadByAll: {
+        isVisible: { list: true, filter: true, show: true, edit: true },
       },
     },
     translations: {
       en: {
         labels: {
           Notification: 'Notifications',
+        },
+        properties: {
+          readBy: 'Read By (Users)',
+          isReadByAll: 'Read By All',
+          recipientId: 'Recipient',
         },
       },
     },

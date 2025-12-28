@@ -22,13 +22,16 @@ const notificationSchema = new mongoose.Schema(
       enum: ['task_assigned', 'admin_broadcast'],
       default: 'admin_broadcast',
     },
-    // Array of user IDs who have read this notification
-    // For targeted notifications: will contain recipientId when read
-    // For broadcasts: will contain IDs of all users who have read it
+    // Array of user IDs who have read this notification (for targeted notifications)
     readBy: [{
       type: mongoose.Types.ObjectId,
       ref: userProfile.modelName,
     }],
+    // For broadcasts: when true, notification is read for ALL users
+    isReadByAll: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
