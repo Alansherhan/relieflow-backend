@@ -6,6 +6,7 @@ import {
   getUserProfile,
   changePassword,
 } from '../controllers/userProfileController.js';
+import { getAllCalamityTypes } from '../controllers/calamityTypeController.js';
 import {
   addDonationRequest,
   deletedDonationRequest,
@@ -17,6 +18,10 @@ import {
   getAllDonations,
   getDonationsForRequest,
 } from '../controllers/donationController.js';
+import {
+  addAidRequest,
+  getMyAidRequests,
+} from '../controllers/aidRequestController.js';
 import { protect } from '../middleWare/authMiddleware.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
@@ -35,6 +40,9 @@ export function publicUserRoutes(router) {
   // router.put('/update/:id',updateProfile)
   router.delete('/delete/:id', deleteUser);
   router.put('/change-password', protect(), changePassword);
+  
+  // Public endpoint for calamity types (no auth required)
+  router.get('/calamity-types', getAllCalamityTypes);
   group(
     '/donation',
     (rootRouter) => {
@@ -54,4 +62,15 @@ export function publicUserRoutes(router) {
   // Notification routes for volunteers
   router.get('/notifications', protect(['volunteer']), getNotifications);
   router.put('/notifications/:id/read', protect(['volunteer']), markAsRead);
+
+  // Aid request routes for public users
+  group(
+    '/aid',
+    (rootRouter) => {
+      rootRouter.use(protect(['public']));
+      rootRouter.post('/request/add', addAidRequest);
+      rootRouter.get('/request/', getMyAidRequests);
+    },
+    router
+  );
 }

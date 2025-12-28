@@ -32,7 +32,8 @@ export const addAidRequest = async (req, res) => {
     const calamityType=req.body.calamityType;
     const address=req.body.address;
     //const location=req.body.location;
-    const aidRequestedBy=req.body.aidRequestedBy;
+    // Get user ID from authenticated user (set by protect middleware)
+    const aidRequestedBy = req.user?._id || req.user?.id;
 
     console.log(req.body)
 
@@ -122,6 +123,28 @@ export const deleteAidRequest =  async (req,res) => {
             success:false,
             message:"Unable to delete"
          });
+    }
+}
+
+// Get aid requests for the logged-in public user
+export const getMyAidRequests = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const aidRequests = await AidRequest.find({ aidRequestedBy: userId })
+            .populate('calamityType')
+            .sort({ createdAt: -1 })
+            .lean();
+        
+        return res.status(200).json({
+            success: true,
+            message: aidRequests
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
     }
 }
 
