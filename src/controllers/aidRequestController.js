@@ -31,11 +31,15 @@ export const addAidRequest = async (req, res) => {
     // const {calamityType , location , imageUrl ,aidRequestedBy} = req.body
     const calamityType=req.body.calamityType;
     const address=req.body.address;
+    // Get imageUrl from uploaded file or from body
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : req.body.imageUrl;
+    const description=req.body.description;
     //const location=req.body.location;
     // Get user ID from authenticated user (set by protect middleware)
     const aidRequestedBy = req.user?._id || req.user?.id;
 
-    console.log(req.body)
+    console.log('Request body:', req.body);
+    console.log('Uploaded file:', req.file);
 
     if (!calamityType || !address){
         return res.status(422).json(
@@ -51,7 +55,8 @@ export const addAidRequest = async (req, res) => {
             calamityType: calamityType,
             address:address,
            // location: location,
-            // imageUrl: imageUrl,
+            imageUrl: imageUrl,
+            description: description,
             status: "pending",
             priority: "low",
             aidRequestedBy:aidRequestedBy
@@ -129,11 +134,20 @@ export const deleteAidRequest =  async (req,res) => {
 // Get aid requests for the logged-in public user
 export const getMyAidRequests = async (req, res) => {
     try {
-        const userId = req.user._id;
+        // Note: JWT payload has 'id' not '_id'
+        const userId = req.user._id || req.user.id;
+        
+        console.log('=== getMyAidRequests DEBUG ===');
+        console.log('req.user:', req.user);
+        console.log('userId:', userId);
+        
         const aidRequests = await AidRequest.find({ aidRequestedBy: userId })
             .populate('calamityType')
             .sort({ createdAt: -1 })
             .lean();
+        
+        console.log('Found aidRequests:', aidRequests.length);
+        console.log('aidRequests:', JSON.stringify(aidRequests, null, 2));
         
         return res.status(200).json({
             success: true,

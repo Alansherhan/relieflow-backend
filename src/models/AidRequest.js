@@ -18,6 +18,10 @@ const aidRequestSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  description: {
+    type: String,
+    required: false,
+  },
   status: {
     type: String,
     enum: ['accepted', 'pending', 'rejected',"completed"],
@@ -32,7 +36,7 @@ const aidRequestSchema = new mongoose.Schema({
     required: true,
     ref: 'userProfile',
   },
-});
+}, { timestamps: true });
 
 aidRequestSchema.virtual('calamity', {
   ref: 'CalamityType',
@@ -71,9 +75,9 @@ aidRequestSchema.virtual('name').get(function () {
 
   const location = [address.addressLine1];
 
-  const calamityName = calamity.calamityName;
+  const calamityName = calamity?.calamityName || 'Unknown';
 
-  return `${location} - ${calamityName}`
+  return `${location} - ${calamityName}`;
 });
 
 // Ensure virtuals are serialized

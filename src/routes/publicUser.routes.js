@@ -68,7 +68,7 @@ export function publicUserRoutes(router) {
     '/aid',
     (rootRouter) => {
       rootRouter.use(protect(['public']));
-      rootRouter.post('/request/add', addAidRequest);
+      rootRouter.post('/request/add', upload.single('image'), addAidRequest);
       rootRouter.get('/request/', getMyAidRequests);
     },
     router
