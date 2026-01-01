@@ -32,7 +32,7 @@ export const assignTask = async (req, res) => {
 
 export const getAllTasks = async (req, res) => {
   try {
-    const allTasks = await TaskSchema.find().populate("assignedTo");
+    const allTasks = await TaskSchema.find().populate("assignedTo").sort({ _id: -1 });
     console.log(allTasks)
     return res.status(200).json({
       success: true,

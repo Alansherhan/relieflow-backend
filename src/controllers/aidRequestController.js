@@ -81,7 +81,7 @@ export const addAidRequest = async (req, res) => {
 
 export const getAllAidRequests = async (req, res)=>{
     try {
-        const aidRequest = await AidRequest.find().lean();
+        const aidRequest = await AidRequest.find().sort({ _id: -1 }).lean();
         console.log(aidRequest)
         return res.status(200).json({
             success:true,

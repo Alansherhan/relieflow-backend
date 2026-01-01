@@ -35,7 +35,7 @@ export const addCenter = async (req, res) => {
 
 export const getAllReliefCenters = async (req, res) => {
   try {
-    const allCenters = await ReliefCenter.find().lean();
+    const allCenters = await ReliefCenter.find().sort({ _id: -1 }).lean();
     console.log(allCenters);
     return res.status(200).json({
       success: true,

@@ -11,3 +11,11 @@ import DonationRequestStatusFilteredSelect from '../src/dashboard/components/Don
 AdminJS.UserComponents.DonationRequestStatusFilteredSelect = DonationRequestStatusFilteredSelect
 import LoginComponent from '../src/dashboard/components/LoginComponent'
 AdminJS.UserComponents.LoginComponent = LoginComponent
+import ImageComponent from '../src/dashboard/components/ImageComponent'
+AdminJS.UserComponents.ImageComponent = ImageComponent
+import ImageListComponent from '../src/dashboard/components/ImageListComponent'
+AdminJS.UserComponents.ImageListComponent = ImageListComponent
+import ImageEditComponent from '../src/dashboard/components/ImageEditComponent'
+AdminJS.UserComponents.ImageEditComponent = ImageEditComponent
+import ImageListEditComponent from '../src/dashboard/components/ImageListEditComponent'
+AdminJS.UserComponents.ImageListEditComponent = ImageListEditComponent

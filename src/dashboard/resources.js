@@ -31,6 +31,14 @@ export const AidRequestResource = {
       _id: {
         isVisible: false, // This hides the 'id' property everywhere
       },
+      imageUrl: {
+        isVisible: { list: true, filter: false, show: true, edit: true },
+        components: {
+          list: Components.ImageComponent,
+          show: Components.ImageComponent,
+          edit: Components.ImageEditComponent,
+        },
+      },
       location: {
         isVisible: {
           new: false,
@@ -113,6 +121,14 @@ export const DonationRequestResource = {
           filter: true, // allow filtering
           show: true, // visible in details
           edit: true, // editable in form
+        },
+      },
+      proofImages: {
+        isVisible: { list: true, filter: false, show: true, edit: true },
+        components: {
+          list: Components.ImageListComponent,
+          show: Components.ImageListComponent,
+          edit: Components.ImageListEditComponent,
         },
       },
       itemDetails: {

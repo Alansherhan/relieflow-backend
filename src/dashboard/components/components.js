@@ -36,6 +36,22 @@ const Components = {
     'LoginComponent',
     path.join(__dirname, 'LoginComponent')
   ),
+  ImageComponent: componentLoader.add(
+    'ImageComponent',
+    path.join(__dirname, 'ImageComponent')
+  ),
+  ImageListComponent: componentLoader.add(
+    'ImageListComponent',
+    path.join(__dirname, 'ImageListComponent')
+  ),
+  ImageEditComponent: componentLoader.add(
+    'ImageEditComponent',
+    path.join(__dirname, 'ImageEditComponent')
+  ),
+  ImageListEditComponent: componentLoader.add(
+    'ImageListEditComponent',
+    path.join(__dirname, 'ImageListEditComponent')
+  ),
 };
 
 export { componentLoader, Components };

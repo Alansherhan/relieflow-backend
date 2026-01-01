@@ -88,7 +88,7 @@ export const addDonationRequest = async (req, res) => {
 
 export const getAllDonationRequests=async(req,res)=>{
     try{
-        const allDonationRequests=await DonationRequest.find().lean();
+        const allDonationRequests=await DonationRequest.find().sort({ _id: -1 }).lean();
         console.log(allDonationRequests)
         return res.status(200).json({
             sucess:true,
