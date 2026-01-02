@@ -48,7 +48,7 @@ export function publicUserRoutes(router) {
     '/donation',
     (rootRouter) => {
       rootRouter.use(protect(['public']));
-      rootRouter.post('/request/add', addDonationRequest);
+      rootRouter.post('/request/add', upload.array('proofImages'), addDonationRequest);
       rootRouter.get('/request/', getAllDonationRequests);
       rootRouter.put('/update-donation/:id', updateDonationRequest);
       rootRouter.delete('/delete/:id', deletedDonationRequest);

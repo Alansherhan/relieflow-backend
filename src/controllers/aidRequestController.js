@@ -34,11 +34,12 @@ export const addAidRequest = async (req, res) => {
     // Get imageUrl from uploaded file or from body
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : req.body.imageUrl;
     const description=req.body.description;
-    //const location=req.body.location;
+    const location=req.body.location;
     // Get user ID from authenticated user (set by protect middleware)
     const aidRequestedBy = req.user?._id || req.user?.id;
 
     console.log('Request body:', req.body);
+    console.log('Location received:', location);
     console.log('Uploaded file:', req.file);
 
     if (!calamityType || !address){
@@ -54,7 +55,7 @@ export const addAidRequest = async (req, res) => {
         const aidCreated = await AidRequest.create({
             calamityType: calamityType,
             address:address,
-           // location: location,
+            location: location,
             imageUrl: imageUrl,
             description: description,
             status: "pending",

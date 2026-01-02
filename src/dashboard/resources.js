@@ -41,8 +41,11 @@ export const AidRequestResource = {
       },
       location: {
         isVisible: {
-          new: false,
+          list: true,
+          filter: true,
+          show: true,
           edit: false,
+          new: false,
         },
         components: {
           list: Components.LinkComponent,

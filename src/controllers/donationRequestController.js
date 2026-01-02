@@ -1,7 +1,8 @@
 import DonationRequest from "../models/DonationRequest.js";
 
 export const addDonationRequest = async (req, res) => {
-    const {
+    // For multipart/form-data, req.body fields might need parsing if they are sent as JSON strings
+    let {
         title,
         description,
         donationType,
@@ -12,8 +13,22 @@ export const addDonationRequest = async (req, res) => {
         location,
         address,
         deadline,
-        proofImages,
     } = req.body;
+
+    // Parse JSON strings if necessary (Flutter MultipartRequest sends complex objects as strings)
+    try {
+        if (typeof itemDetails === 'string') itemDetails = JSON.parse(itemDetails);
+        if (typeof location === 'string') location = JSON.parse(location);
+        if (typeof address === 'string') address = JSON.parse(address);
+    } catch (e) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid JSON format for itemDetails, location, or address',
+        });
+    }
+
+    // Handle uploaded files
+    const proofImages = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
 
     // Get userId from JWT token (set by auth middleware)
     const requestedBy = req.user?._id || req.user?.id;
