@@ -14,7 +14,7 @@ const DonationRequestStatusFilteredSelect = ({ property, record, onChange }) => 
       const response = await api.resourceAction({
         resourceId: 'DonationRequest',
         actionName: 'list',
-        params: { 'filters.status': 'accepted' },
+        params: { 'filters.status': 'accepted', perPage: 1000 },
       });
       console.log('logogdgd', response)
       if (response.data && response.data.records) {

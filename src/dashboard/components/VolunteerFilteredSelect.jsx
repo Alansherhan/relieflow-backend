@@ -14,7 +14,7 @@ const VolunteerFilteredSelect = ({ property, record, onChange }) => {
       const response = await api.resourceAction({
         resourceId: 'userProfile',
         actionName: 'list',
-        params: { 'filters.role': 'volunteer' },
+        params: { 'filters.role': 'volunteer', perPage: 1000 },
       });
       if (response.data && response.data.records) {
         console.log('mapping ', response.data.records)

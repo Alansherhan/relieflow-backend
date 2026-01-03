@@ -14,7 +14,7 @@ const StatusFilteredSelect = ({ property, record, onChange }) => {
       const response = await api.resourceAction({
         resourceId: 'AidRequest',
         actionName: 'list',
-        params: { 'filters.status': 'rejected' },
+        params: { 'filters.status': 'rejected', perPage: 1000 },
       });
       console.log('logogdgd', response)
       if (response.data && response.data.records) {
