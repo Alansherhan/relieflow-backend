@@ -43,6 +43,14 @@ const taskSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         required: false,
         ref: DonationRequest.modelName
+    },
+    proofImageUrl: {
+        type: String,
+        required: false
+    },
+    completedAt: {
+        type: Date,
+        required: false
     }
 })
 

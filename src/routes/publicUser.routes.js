@@ -26,7 +26,7 @@ import { protect } from '../middleWare/authMiddleware.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
-import { getMyTasks, updateTaskStatus } from '../controllers/taskController.js';
+import { getMyTasks, updateTaskStatus, completeTaskWithProof } from '../controllers/taskController.js';
 
 export function publicUserRoutes(router) {
   router.post('/signup', signUp);
@@ -67,6 +67,7 @@ export function publicUserRoutes(router) {
   // Task routes for volunteers
   router.get('/tasks', protect(['volunteer']), getMyTasks);
   router.put('/tasks/:id/status', protect(['volunteer']), updateTaskStatus);
+  router.put('/tasks/:id/complete', protect(['volunteer']), upload.single('proofImage'), completeTaskWithProof);
 
   // Aid request routes for public users
   group(

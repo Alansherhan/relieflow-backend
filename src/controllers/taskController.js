@@ -164,3 +164,70 @@ export const updateTaskStatus = async (req, res) => {
     });
   }
 };
+
+// Complete task with proof image upload
+export const completeTaskWithProof = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const volunteerId = req.user.id || req.user._id;
+
+    console.log('[completeTaskWithProof] Task ID:', id);
+    console.log('[completeTaskWithProof] Volunteer ID:', volunteerId);
+    console.log('[completeTaskWithProof] File:', req.file);
+
+    // Check if proof image was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Proof image is required to complete the task'
+      });
+    }
+
+    // Find task and verify it's assigned to this volunteer
+    const task = await TaskSchema.findById(id);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    if (task.assignedTo.toString() !== volunteerId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to complete this task'
+      });
+    }
+
+    // Check if task is in accepted state (can only complete accepted tasks)
+    if (task.status !== 'accepted') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only complete tasks that are in accepted status'
+      });
+    }
+
+    // Generate the proof image URL (relative path for serving static files)
+    const proofImageUrl = `/uploads/${req.file.filename}`;
+
+    // Update task with proof image and completion status
+    task.status = 'completed';
+    task.proofImageUrl = proofImageUrl;
+    task.completedAt = new Date();
+    await task.save();
+
+    console.log(`[completeTaskWithProof] Task ${id} completed with proof: ${proofImageUrl}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Task completed successfully',
+      data: task
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error completing task'
+    });
+  }
+};
