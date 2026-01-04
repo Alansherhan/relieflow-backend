@@ -18,7 +18,8 @@ const taskSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true,
-        enum: ["accepted", "pending", "rejected", "completed"]
+        enum: ["open", "assigned", "accepted", "rejected", "completed"],
+        default: "open"
     },
     priority: {
         type: String,
@@ -27,8 +28,19 @@ const taskSchema = new mongoose.Schema({
     },
     assignedTo: {
         type: mongoose.Types.ObjectId,
-        required: true,
+        required: false, // Optional for 'open' tasks
         ref: userProfile.modelName
+    },
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            default: undefined
+        }
     },
     imageUrl: {
         type: String,
@@ -64,7 +76,8 @@ taskSchema.pre('save', function (next) {
 taskSchema.post('save', async function (doc) {
     try {
         // Use the flag we captured in pre-save
-        if (this._wasNew) {
+        // Only notify if task is assigned to someone (not an 'open' task)
+        if (this._wasNew && doc.assignedTo) {
             console.log('[Task Hook] Creating notification for new task:', doc.taskName);
             console.log('[Task Hook] AssignedTo:', doc.assignedTo);
 
@@ -81,5 +94,8 @@ taskSchema.post('save', async function (doc) {
         console.error('[Task Hook] Error creating task notification:', error);
     }
 });
+
+// Add geospatial index for location-based queries
+taskSchema.index({ location: '2dsphere' });
 
 export default mongoose.model("TaskSchema", taskSchema)

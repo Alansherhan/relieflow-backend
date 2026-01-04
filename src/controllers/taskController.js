@@ -231,3 +231,99 @@ export const completeTaskWithProof = async (req, res) => {
     });
   }
 };
+
+// Get all open tasks (marketplace)
+export const getOpenTasks = async (req, res) => {
+  try {
+    const { skill, lng, lat } = req.query;
+
+    let query = { status: 'open' };
+
+    // Build aggregation pipeline for geo-sorting if coordinates provided
+    let tasks;
+    if (lng && lat) {
+      tasks = await TaskSchema.aggregate([
+        { $match: query },
+        {
+          $geoNear: {
+            near: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
+            distanceField: 'distance',
+            spherical: true,
+            maxDistance: 50000 // 50km radius
+          }
+        }
+      ]);
+    } else {
+      tasks = await TaskSchema.find(query)
+        .populate('aidRequest')
+        .populate('donationRequest')
+        .sort({ _id: -1 });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: tasks
+    });
+  } catch (error) {
+    console.error('[getOpenTasks] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error fetching open tasks'
+    });
+  }
+};
+
+// Volunteer claims an open task
+export const claimTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const volunteerId = req.user.id || req.user._id;
+
+    console.log('[claimTask] Task ID:', id);
+    console.log('[claimTask] Volunteer ID:', volunteerId);
+
+    // Find task
+    const task = await TaskSchema.findById(id);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // Check if task is still open
+    if (task.status !== 'open') {
+      return res.status(400).json({
+        success: false,
+        message: 'Task is no longer available for claiming'
+      });
+    }
+
+    // Check if already assigned
+    if (task.assignedTo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Task has already been claimed'
+      });
+    }
+
+    // Assign task to volunteer
+    task.assignedTo = volunteerId;
+    task.status = 'assigned'; // Move to assigned status after claim
+    await task.save();
+
+    console.log(`[claimTask] Task ${id} claimed by volunteer ${volunteerId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Task claimed successfully',
+      data: task
+    });
+  } catch (error) {
+    console.error('[claimTask] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error claiming task'
+    });
+  }
+};
