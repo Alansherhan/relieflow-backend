@@ -58,6 +58,21 @@ export const AidRequestResource = {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
     },
+    actions: {
+      createTask: {
+        actionType: 'record',
+        component: Components.CreateTaskFromAidRequest,
+        icon: 'Plus',
+        label: 'Create Task',
+        handler: async (request, response, context) => {
+          // The actual task creation is handled by the React component
+          // This handler just returns the record for the component to use
+          return {
+            record: context.record.toJSON(context.currentAdmin),
+          };
+        },
+      },
+    },
     translations: {
       en: {
         labels: {
@@ -177,6 +192,13 @@ export const TaskResource = {
   options: {
     properties: {
       _id: { isVisible: false },
+      volunteersNeeded: {
+        isVisible: { list: true, filter: true, show: true, edit: true },
+      },
+      assignedVolunteers: {
+        reference: 'userProfile',
+        isVisible: { list: true, filter: true, show: true, edit: true },
+      },
       aidRequest: {
         reference: 'AidRequest', // Must match the resource ID you registered
         components: {
@@ -189,16 +211,15 @@ export const TaskResource = {
           edit: Components.DonationRequestStatusFilteredSelect,
         },
       },
-      assignedTo: {
-        components: {
-          edit: Components.VolunteerFilteredSelect,
-        },
-      },
     },
     translations: {
       en: {
         labels: {
           TaskSchema: 'Task', // Resource name override
+        },
+        properties: {
+          assignedVolunteers: 'Assigned Volunteers',
+          volunteersNeeded: 'Volunteers Needed',
         },
       },
     },

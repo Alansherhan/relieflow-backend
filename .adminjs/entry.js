@@ -19,3 +19,5 @@ import ImageEditComponent from '../src/dashboard/components/ImageEditComponent'
 AdminJS.UserComponents.ImageEditComponent = ImageEditComponent
 import ImageListEditComponent from '../src/dashboard/components/ImageListEditComponent'
 AdminJS.UserComponents.ImageListEditComponent = ImageListEditComponent
+import CreateTaskFromAidRequest from '../src/dashboard/components/CreateTaskFromAidRequest'
+AdminJS.UserComponents.CreateTaskFromAidRequest = CreateTaskFromAidRequest

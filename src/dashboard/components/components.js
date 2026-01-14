@@ -52,6 +52,10 @@ const Components = {
     'ImageListEditComponent',
     path.join(__dirname, 'ImageListEditComponent')
   ),
+  CreateTaskFromAidRequest: componentLoader.add(
+    'CreateTaskFromAidRequest',
+    path.join(__dirname, 'CreateTaskFromAidRequest')
+  ),
 };
 
 export { componentLoader, Components };

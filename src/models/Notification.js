@@ -19,7 +19,7 @@ const notificationSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ['task_assigned', 'admin_broadcast'],
+      enum: ['task_assigned', 'admin_broadcast', 'task_open_broadcast', 'aid_request_in_progress'],
       default: 'admin_broadcast',
     },
     // Array of user IDs who have read this notification (for targeted notifications)

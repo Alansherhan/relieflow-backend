@@ -3,7 +3,7 @@ import { group } from "../utils/routerUtils.js";
 import { adminSignUp } from "../controllers/adminUserController.js";
 import { getAllCalamityTypes, addCalamity, deleteCalamityType } from "../controllers/calamityTypeController.js";
 import { getAllAidRequests, addAidRequest, getAidRequest, deleteAidRequest } from "../controllers/aidRequestController.js";
-import { assignTask, deleteTask, getAllTasks } from "../controllers/taskController.js";
+import { assignTask, deleteTask, getAllTasks, createTaskFromAidRequest, searchVolunteers } from "../controllers/taskController.js";
 import { addCenter, deleteReliefCenter, getAllReliefCenters, getReliefCenter, updateReliefCenter } from "../controllers/reliefCenterController.js";
 
 
@@ -35,6 +35,8 @@ export function adminRoutes(router) {
             taskrouter.post("/assign",assignTask)
             taskrouter.get("/",getAllTasks)
             taskrouter.delete("/delete/:id",deleteTask)
+            taskrouter.post("/create-from-aid-request/:aidRequestId", createTaskFromAidRequest)
+            taskrouter.get("/search-volunteers", searchVolunteers)
         },
         router
     );

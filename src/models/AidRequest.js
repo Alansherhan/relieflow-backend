@@ -73,11 +73,10 @@ aidRequestSchema.virtual('name').get(function () {
   const { address, calamity } = this;
   if (!address) return '';
 
-  const location = [address.addressLine1];
-
+  const location = address.addressLine1 || 'Unknown Location';
   const calamityName = calamity?.calamityName || 'Unknown';
 
-  return `${location} - ${calamityName}`;
+  return `${calamityName} - ${location}`;
 });
 
 // Ensure virtuals are serialized
