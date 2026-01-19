@@ -1,7 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import router from './src/routes/apiRoutes.js';
+import portalRoutes from './src/routes/portal.routes.js';
 import AdminJS from 'adminjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -31,6 +33,8 @@ import {
   TaskResource,
   UserProfileResource,
   NotificationResource,
+  PortalDonationResource,
+  AdminWalletResource,
 } from './src/dashboard/resources.js';
 import {
   componentLoader,
@@ -43,6 +47,19 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// CORS configuration for donation portal
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    process.env.PORTAL_URL, // Production portal URL
+  ].filter(Boolean),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -71,6 +88,8 @@ const adminOptions = {
     DisasterTipsResource,
     QuizQuestionResource,
     NotificationResource,
+    PortalDonationResource,
+    AdminWalletResource,
   ],
   rootPath: '/dashboard',
 
@@ -204,6 +223,9 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
 
 // Mount admin router
 app.use(adminJS.options.rootPath, adminRouter);
+
+// Portal API routes
+app.use('/api/portal', portalRoutes);
 
 app.use('/', router);
 

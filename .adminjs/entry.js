@@ -21,3 +21,7 @@ import ImageListEditComponent from '../src/dashboard/components/ImageListEditCom
 AdminJS.UserComponents.ImageListEditComponent = ImageListEditComponent
 import CreateTaskFromAidRequest from '../src/dashboard/components/CreateTaskFromAidRequest'
 AdminJS.UserComponents.CreateTaskFromAidRequest = CreateTaskFromAidRequest
+import MapPicker from '../src/dashboard/components/MapPicker'
+AdminJS.UserComponents.MapPicker = MapPicker
+import MapShow from '../src/dashboard/components/MapShow'
+AdminJS.UserComponents.MapShow = MapShow
