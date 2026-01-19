@@ -56,6 +56,14 @@ const Components = {
     'CreateTaskFromAidRequest',
     path.join(__dirname, 'CreateTaskFromAidRequest')
   ),
+  MapPicker: componentLoader.add(
+    'MapPicker',
+    path.join(__dirname, 'MapPicker.jsx')
+  ),
+  MapShow: componentLoader.add(
+    'MapShow',
+    path.join(__dirname, 'MapShow.jsx')
+  ),
 };
 
 export { componentLoader, Components };

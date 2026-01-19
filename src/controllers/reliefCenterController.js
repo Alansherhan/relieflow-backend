@@ -1,9 +1,10 @@
 import ReliefCenter from '../models/ReliefCenter.js';
+import axios from 'axios';
 
 export const addCenter = async (req, res) => {
   // res.status(201).json({ name: ""})
   const shelterName = req.body.shelterName;
-  const address = req.body.address;
+  const addressModel = req.body.address; // This is the address object from the frontend/admin
   const coordinatorName = req.body.coordinatorName;
   const coordinatorNumber = req.body.coordinatorNumber;
 
@@ -16,7 +17,7 @@ export const addCenter = async (req, res) => {
   try {
     const createdUser = await ReliefCenter.create({
       shelterName: shelterName,
-      address: address,
+      address: addressModel,
       coordinatorName: coordinatorName,
       coordinatorNumber: coordinatorNumber,
     });

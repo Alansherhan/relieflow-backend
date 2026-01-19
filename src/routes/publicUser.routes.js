@@ -22,6 +22,7 @@ import {
   addAidRequest,
   getMyAidRequests,
 } from '../controllers/aidRequestController.js';
+import { getAllReliefCenters } from '../controllers/reliefCenterController.js';
 import { protect } from '../middleWare/authMiddleware.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
@@ -44,6 +45,7 @@ export function publicUserRoutes(router) {
 
   // Public endpoint for calamity types (no auth required)
   router.get('/calamity-types', getAllCalamityTypes);
+  router.get('/relief-centers', getAllReliefCenters);
   group(
     '/donation',
     (rootRouter) => {

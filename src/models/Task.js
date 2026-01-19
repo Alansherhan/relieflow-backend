@@ -40,7 +40,7 @@ const taskSchema = new mongoose.Schema({
         type: {
             type: String,
             enum: ['Point'],
-            default: 'Point'
+            // default: 'Point' - Removed to prevent invalid GeoJSON creation without coordinates
         },
         coordinates: {
             type: [Number], // [longitude, latitude]
