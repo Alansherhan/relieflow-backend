@@ -8,7 +8,7 @@ import Task from "../models/Task.js";
  */
 export const getPublicDonationRequests = async (req, res) => {
   try {
-    const { status, donationType, priority, limit = 20, page = 1 } = req.query;
+    const { status, donationType, priority, search, limit = 20, page = 1 } = req.query;
     
     const filter = {
       status: { $in: ['pending', 'accepted', 'partially_fulfilled'] },
@@ -16,6 +16,14 @@ export const getPublicDonationRequests = async (req, res) => {
     
     if (donationType) filter.donationType = donationType;
     if (priority) filter.priority = priority;
+    
+    // Server-side search on title and description
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     

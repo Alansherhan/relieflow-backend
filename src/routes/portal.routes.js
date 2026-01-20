@@ -18,6 +18,7 @@ import {
 } from '../controllers/walletController.js';
 import { protect } from '../middleWare/authMiddleware.js';
 import upload from '../middleWare/upload.js';
+import PortalDonation from '../models/PortalDonation.js';
 
 const router = Router();
 
@@ -35,6 +36,58 @@ router.get('/public/wallet-info', getWalletInfo);
 // Guest donations (anonymous cash)
 router.post('/public/donate', addGuestDonation);
 router.post('/public/donate-wallet', guestDonateToWallet);
+
+// Public receipt endpoint (for download after donation)
+router.get('/public/donation/:id/receipt', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Validate ObjectId
+    const mongoose = await import('mongoose');
+    if (!mongoose.default.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid donation ID',
+      });
+    }
+    
+    const donation = await PortalDonation.findById(id)
+      .populate('donationRequest', 'title')
+      .lean();
+    
+    if (!donation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Donation not found',
+      });
+    }
+    
+    // Return only safe receipt data (no sensitive info)
+    return res.status(200).json({
+      success: true,
+      data: {
+        _id: donation._id,
+        donorName: donation.donorName,
+        donorEmail: donation.donorEmail,
+        donationType: donation.donationType,
+        amount: donation.amount,
+        itemDetails: donation.itemDetails,
+        transactionRef: donation.transactionRef,
+        status: donation.status,
+        createdAt: donation.createdAt,
+        donationRequest: donation.donationRequest,
+        isWalletDonation: donation.isWalletDonation,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching receipt:', error.message, error.stack);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch receipt',
+      error: error.message,
+    });
+  }
+});
 
 // ==========================================
 // AUTHENTICATED ROUTES (Login Required)
