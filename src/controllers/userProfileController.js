@@ -26,6 +26,21 @@ export const signUp = async (req, res) => {
   const role = req.body.role;
 
   try {
+
+    if (!name || !email || !address || !phoneNumber || !password || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required',
+      });
+    }
+
+    const userExists = await User.findOne({ $or: [{ email: email }, { phoneNumber: phoneNumber }] });
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists',
+      });
+    }
     const salt = await bcrypt.genSalt(10); // generate salt
     const hashedPassword = await bcrypt.hash(password, salt);
 
