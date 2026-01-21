@@ -64,6 +64,10 @@ const Components = {
     'MapShow',
     path.join(__dirname, 'MapShow.jsx')
   ),
+  HeatmapVisualization: componentLoader.add(
+    'HeatmapVisualization',
+    path.join(__dirname, 'HeatmapVisualization.jsx')
+  ),
 };
 
 export { componentLoader, Components };
