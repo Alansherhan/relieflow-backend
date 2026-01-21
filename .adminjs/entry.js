@@ -25,3 +25,5 @@ import MapPicker from '../src/dashboard/components/MapPicker'
 AdminJS.UserComponents.MapPicker = MapPicker
 import MapShow from '../src/dashboard/components/MapShow'
 AdminJS.UserComponents.MapShow = MapShow
+import HeatmapVisualization from '../src/dashboard/components/HeatmapVisualization'
+AdminJS.UserComponents.HeatmapVisualization = HeatmapVisualization

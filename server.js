@@ -21,6 +21,7 @@ import DonationRequest from './src/models/DonationRequest.js';
 import ReliefCenter from './src/models/ReliefCenter.js';
 import Task from './src/models/Task.js';
 import userProfile from './src/models/userProfile.js';
+import { getHeatmapData } from './src/controllers/heatmapController.js';
 import {
   AdminResource,
   AidRequestResource,
@@ -226,6 +227,13 @@ app.use(adminJS.options.rootPath, adminRouter);
 
 // Portal API routes
 app.use('/api/portal', portalRoutes);
+
+// Heatmap API route for dashboard
+app.get('/api/dashboard/heatmap', getHeatmapData);
+
+// Dashboard stats API route
+import { getDashboardStats } from './src/controllers/dashboardController.js';
+app.get('/api/dashboard/stats', getDashboardStats);
 
 app.use('/', router);
 
