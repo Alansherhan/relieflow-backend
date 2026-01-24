@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import PortalDonation from "../models/PortalDonation.js";
 import DonationRequest from "../models/DonationRequest.js";
 import AdminWallet from "../models/AdminWallet.js";
@@ -320,12 +321,45 @@ export const submitItemDonation = async (req, res) => {
     const proofImage = req.file ? `/uploads/${req.file.filename}` : null;
     
     // Update donation
+    const donatedItems = itemDetails || portalDonation.itemDetails;
     if (itemDetails) portalDonation.itemDetails = itemDetails;
     if (proofImage) portalDonation.proofImage = proofImage;
     if (notes) portalDonation.notes = notes;
     portalDonation.deliveryMethod = 'self_delivery';
     portalDonation.status = 'submitted'; // Pending admin validation
     await portalDonation.save();
+    
+    // Update fulfilled quantities on the DonationRequest
+    if (portalDonation.donationRequest && donatedItems && donatedItems.length > 0) {
+      const donationRequest = await DonationRequest.findById(portalDonation.donationRequest);
+      if (donationRequest && donationRequest.itemDetails) {
+        // Update fulfilled quantities for each donated item
+        donatedItems.forEach(donatedItem => {
+          const requestItem = donationRequest.itemDetails.find(
+            ri => ri.category === donatedItem.category
+          );
+          if (requestItem) {
+            requestItem.fulfilledQuantity = (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
+          }
+        });
+        
+        // Check if all items are fully fulfilled
+        const allFulfilled = donationRequest.itemDetails.every(
+          item => (item.fulfilledQuantity || 0) >= item.quantity
+        );
+        const partiallyFulfilled = donationRequest.itemDetails.some(
+          item => (item.fulfilledQuantity || 0) > 0
+        );
+        
+        if (allFulfilled) {
+          donationRequest.status = 'completed';
+        } else if (partiallyFulfilled) {
+          donationRequest.status = 'partially_fulfilled';
+        }
+        
+        await donationRequest.save();
+      }
+    }
     
     return res.status(200).json({
       success: true,
@@ -423,6 +457,7 @@ export const requestPickup = async (req, res) => {
     const task = await Task.create(taskData);
     
     // Update portal donation
+    const donatedItems = itemDetails || portalDonation.itemDetails;
     if (itemDetails) portalDonation.itemDetails = itemDetails;
     if (proofImage) portalDonation.proofImage = proofImage;
     portalDonation.deliveryMethod = 'pickup_requested';
@@ -433,6 +468,38 @@ export const requestPickup = async (req, res) => {
     portalDonation.pickupTask = task._id;
     portalDonation.status = 'pickup_requested';
     await portalDonation.save();
+    
+    // Update fulfilled quantities on the DonationRequest
+    if (portalDonation.donationRequest && donatedItems && donatedItems.length > 0) {
+      const donationRequest = await DonationRequest.findById(portalDonation.donationRequest);
+      if (donationRequest && donationRequest.itemDetails) {
+        // Update fulfilled quantities for each donated item
+        donatedItems.forEach(donatedItem => {
+          const requestItem = donationRequest.itemDetails.find(
+            ri => ri.category === donatedItem.category
+          );
+          if (requestItem) {
+            requestItem.fulfilledQuantity = (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
+          }
+        });
+        
+        // Check if all items are fully fulfilled
+        const allFulfilled = donationRequest.itemDetails.every(
+          item => (item.fulfilledQuantity || 0) >= item.quantity
+        );
+        const partiallyFulfilled = donationRequest.itemDetails.some(
+          item => (item.fulfilledQuantity || 0) > 0
+        );
+        
+        if (allFulfilled) {
+          donationRequest.status = 'completed';
+        } else if (partiallyFulfilled) {
+          donationRequest.status = 'partially_fulfilled';
+        }
+        
+        await donationRequest.save();
+      }
+    }
     
     return res.status(200).json({
       success: true,
@@ -534,8 +601,9 @@ export const getMyDonations = async (req, res) => {
     const total = await PortalDonation.countDocuments(filter);
     
     // Get status counts for dashboard
+    const userObjectId = new mongoose.Types.ObjectId(userId);
     const statusCounts = await PortalDonation.aggregate([
-      { $match: { donor: userId } },
+      { $match: { donor: userObjectId } },
       { $group: { _id: '$status', count: { $sum: 1 } } },
     ]);
     
@@ -548,7 +616,9 @@ export const getMyDonations = async (req, res) => {
       cancelled: 0,
     };
     statusCounts.forEach(s => {
-      counts[s._id] = s.count;
+      if (counts.hasOwnProperty(s._id)) {
+        counts[s._id] = s.count;
+      }
     });
     
     return res.status(200).json({

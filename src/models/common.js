@@ -43,7 +43,12 @@ export const itemSchema= new mongoose.Schema({
         required:false
     },
     quantity:{
-        type:String,
+        type:Number,
         required:true,
+    },
+    // Track how much of this item has been fulfilled by donations
+    fulfilledQuantity:{
+        type:Number,
+        default:0
     }
 })
