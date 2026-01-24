@@ -27,3 +27,5 @@ import MapShow from '../src/dashboard/components/MapShow'
 AdminJS.UserComponents.MapShow = MapShow
 import HeatmapVisualization from '../src/dashboard/components/HeatmapVisualization'
 AdminJS.UserComponents.HeatmapVisualization = HeatmapVisualization
+import NotificationForm from '../src/dashboard/components/NotificationForm'
+AdminJS.UserComponents.NotificationForm = NotificationForm

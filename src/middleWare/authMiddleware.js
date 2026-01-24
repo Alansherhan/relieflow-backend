@@ -2,6 +2,9 @@ import jwt from 'jsonwebtoken';
 
 export const protect = (roles = []) => {
   return (req, res, next) => {
+    console.log('=== PROTECT MIDDLEWARE ===');
+    console.log('Route:', req.originalUrl);
+    console.log('Allowed Roles:', roles);
     // 1. Get token from header
     const authHeader = req.header('Authorization');
     if (!authHeader) {
@@ -21,6 +24,9 @@ export const protect = (roles = []) => {
 
       // 3. Check for roles (Authorization)
       if (roles.length > 0 && !roles.includes(req.user.role)) {
+        console.log('Forbidden: You do not have the required permissions.');
+        console.log('User Role:', req.user.role);
+        console.log('Required Roles:', roles);
         return res
           .status(403)
           .json({

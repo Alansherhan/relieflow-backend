@@ -68,6 +68,10 @@ const Components = {
     'HeatmapVisualization',
     path.join(__dirname, 'HeatmapVisualization.jsx')
   ),
+  NotificationForm: componentLoader.add(
+    'NotificationForm',
+    path.join(__dirname, 'NotificationForm.jsx')
+  ),
 };
 
 export { componentLoader, Components };

@@ -62,9 +62,9 @@ export function publicUserRoutes(router) {
     router
   );
 
-  // Notification routes for volunteers
-  router.get('/notifications', protect(['volunteer']), getNotifications);
-  router.put('/notifications/:id/read', protect(['volunteer']), markAsRead);
+  // Notification routes for public users and volunteers
+  router.get('/notifications', protect(['public', 'volunteer']), getNotifications);
+  router.put('/notifications/:id/read', protect(['public', 'volunteer']), markAsRead);
 
   // Task routes for volunteers
   router.get('/tasks', protect(['volunteer']), getMyTasks);

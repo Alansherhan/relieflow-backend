@@ -14,13 +14,42 @@ const notificationSchema = new mongoose.Schema(
     recipientId: {
       type: mongoose.Types.ObjectId,
       ref: userProfile.modelName,
-      default: null, // null means broadcast to all volunteers
+      default: null, // null means broadcast to all users of targetUserType
     },
     type: {
       type: String,
       required: true,
-      enum: ['task_assigned', 'admin_broadcast', 'task_open_broadcast', 'aid_request_in_progress'],
+      enum: [
+        // Volunteer notifications
+        'task_assigned',
+        'task_open_broadcast',
+        'aid_request_in_progress',
+        
+        // Public user notifications
+        'aid_request_submitted',
+        'aid_request_accepted',
+        'aid_request_rejected',
+        'aid_request_completed',
+        'donation_request_submitted',
+        'donation_request_accepted',
+        'donation_request_rejected',
+        'donation_request_completed',
+        'donation_request_partially_fulfilled',
+        
+        // Shared notifications
+        'admin_broadcast',
+        'weather_alert',
+        'disaster_alert',
+        'relief_center_update',
+        'system_notification',
+      ],
       default: 'admin_broadcast',
+    },
+    // Target user type: 'volunteer', 'public', or 'all'
+    targetUserType: {
+      type: String,
+      enum: ['volunteer', 'public', 'all'],
+      default: 'all',
     },
     // Array of user IDs who have read this notification (for targeted notifications)
     readBy: [{
