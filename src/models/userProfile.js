@@ -28,8 +28,8 @@ const userSchema = new mongoose.Schema(
     },
     // --- 1. NEW FIELD FOR IMAGE UPLOAD ---
     profileImage: {
-      type: String, 
-      default: "" 
+      type: String,
+      default: ""
     },
     role: {
       type: String,
@@ -50,6 +50,11 @@ const userSchema = new mongoose.Schema(
     },
     deletedAt: {
       type: Date,
+      default: null,
+    },
+    // FCM token for push notifications
+    fcmToken: {
+      type: String,
       default: null,
     },
   },

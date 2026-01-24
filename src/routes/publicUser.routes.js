@@ -27,6 +27,7 @@ import { protect } from '../middleWare/authMiddleware.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
+import { registerFcmToken, unregisterFcmToken } from '../controllers/fcmController.js';
 import { getMyTasks, updateTaskStatus, completeTaskWithProof, getOpenTasks, claimTask } from '../controllers/taskController.js';
 
 export function publicUserRoutes(router) {
@@ -65,6 +66,10 @@ export function publicUserRoutes(router) {
   // Notification routes for public users and volunteers
   router.get('/notifications', protect(['public', 'volunteer']), getNotifications);
   router.put('/notifications/:id/read', protect(['public', 'volunteer']), markAsRead);
+
+  // FCM token routes for push notifications
+  router.post('/fcm/register', protect(['public', 'volunteer']), registerFcmToken);
+  router.delete('/fcm/unregister', protect(['public', 'volunteer']), unregisterFcmToken);
 
   // Task routes for volunteers
   router.get('/tasks', protect(['volunteer']), getMyTasks);

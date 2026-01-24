@@ -14,6 +14,7 @@ import disasterTip from '../models/disasterTip.js';
 import Notification from '../models/Notification.js';
 import PortalDonation from '../models/PortalDonation.js';
 import AdminWallet from '../models/AdminWallet.js';
+import { sendToUser, sendToRole } from '../services/fcmService.js';
 
 export const AdminResource = {
   resource: adminUser,
@@ -195,7 +196,7 @@ export const ReliefCenterResource = {
       address: {
         isVisible: { list: false, filter: false, show: true, edit: true },
         components: {
-            edit: Components.MapPicker
+          edit: Components.MapPicker
         }
       },
     },
@@ -348,20 +349,20 @@ export const NotificationResource = {
   options: {
     properties: {
       _id: { isVisible: false },
-      
+
       // 1. Title
       title: {
         isVisible: { list: true, filter: true, show: true, edit: false },
         position: 1,
       },
-      
+
       // 2. Message body
       body: {
         type: 'textarea',
         isVisible: { list: false, filter: false, show: true, edit: false },
         position: 2,
       },
-      
+
       // 3. Notification type
       type: {
         isVisible: { list: true, filter: true, show: true, edit: false },
@@ -374,7 +375,7 @@ export const NotificationResource = {
           { value: 'system_notification', label: '🔧 System Notice' },
         ],
       },
-      
+
       // 4. Target audience (for broadcasts)
       targetUserType: {
         isVisible: { list: true, filter: true, show: true, edit: false },
@@ -385,14 +386,14 @@ export const NotificationResource = {
           { value: 'volunteer', label: '🙋 Volunteers' },
         ],
       },
-      
+
       // 5. Specific recipient
       recipientId: {
         reference: 'userProfile',
         isVisible: { list: true, filter: true, show: true, edit: false },
         position: 5,
       },
-      
+
       // Hide system/internal fields
       readBy: { isVisible: false },
       isReadByAll: { isVisible: false },
@@ -405,6 +406,35 @@ export const NotificationResource = {
       // Use custom form for creating notifications
       new: {
         component: Components.NotificationForm,
+        after: async (response) => {
+          // Send FCM push notification after creating
+          if (response.record && !response.record.errors) {
+            const notification = response.record.params;
+            const pushData = {
+              title: notification.title,
+              body: notification.body,
+              data: {
+                type: notification.type,
+                notificationId: notification._id,
+              },
+            };
+
+            try {
+              if (notification.recipientId) {
+                // Targeted notification
+                await sendToUser(notification.recipientId, pushData);
+                console.log(`FCM sent to user ${notification.recipientId}`);
+              } else {
+                // Broadcast notification
+                await sendToRole(notification.targetUserType || 'all', pushData);
+                console.log(`FCM broadcast to ${notification.targetUserType || 'all'}`);
+              }
+            } catch (error) {
+              console.error('FCM send error:', error.message);
+            }
+          }
+          return response;
+        },
       },
       // Use custom form for editing notifications
       edit: {
