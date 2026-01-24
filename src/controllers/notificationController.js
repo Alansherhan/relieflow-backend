@@ -6,12 +6,20 @@ export const getNotifications = async (req, res) => {
     try {
         // Use req.user.id (from JWT) - convert to ObjectId for MongoDB queries
         const userId = new mongoose.Types.ObjectId(req.user.id);
+        const userRole = req.user.role || 'public'; // Get user role from JWT
+        
         console.log('========== GET NOTIFICATIONS ==========');
         console.log('User ID:', userId);
+        console.log('User Role:', userRole);
 
-        // Fetch notifications where recipientId matches user OR recipientId is null (broadcast)
+        // Fetch notifications where:
+        // 1. recipientId matches user OR recipientId is null (broadcast)
+        // 2. AND targetUserType matches user role OR is 'all'
         const notifications = await Notification.find({
-            $or: [{ recipientId: userId }, { recipientId: null }],
+            $and: [
+                { $or: [{ recipientId: userId }, { recipientId: null }] },
+                { $or: [{ targetUserType: userRole }, { targetUserType: 'all' }] }
+            ]
         })
             .sort({ createdAt: -1 })
             .limit(50)

@@ -348,16 +348,67 @@ export const NotificationResource = {
   options: {
     properties: {
       _id: { isVisible: false },
+      
+      // 1. Title
+      title: {
+        isVisible: { list: true, filter: true, show: true, edit: false },
+        position: 1,
+      },
+      
+      // 2. Message body
+      body: {
+        type: 'textarea',
+        isVisible: { list: false, filter: false, show: true, edit: false },
+        position: 2,
+      },
+      
+      // 3. Notification type
+      type: {
+        isVisible: { list: true, filter: true, show: true, edit: false },
+        position: 3,
+        availableValues: [
+          { value: 'admin_broadcast', label: '📢 Announcement' },
+          { value: 'weather_alert', label: '⛈️ Weather Alert' },
+          { value: 'disaster_alert', label: '🚨 Disaster Alert' },
+          { value: 'relief_center_update', label: '📍 Relief Center Update' },
+          { value: 'system_notification', label: '🔧 System Notice' },
+        ],
+      },
+      
+      // 4. Target audience (for broadcasts)
+      targetUserType: {
+        isVisible: { list: true, filter: true, show: true, edit: false },
+        position: 4,
+        availableValues: [
+          { value: 'all', label: '👥 Everyone' },
+          { value: 'public', label: '🏠 Public Users' },
+          { value: 'volunteer', label: '🙋 Volunteers' },
+        ],
+      },
+      
+      // 5. Specific recipient
       recipientId: {
         reference: 'userProfile',
-        isVisible: { list: true, filter: true, show: true, edit: true },
+        isVisible: { list: true, filter: true, show: true, edit: false },
+        position: 5,
       },
-      readBy: {
-        reference: 'userProfile',
-        isVisible: { list: false, filter: false, show: true, edit: false },
+      
+      // Hide system/internal fields
+      readBy: { isVisible: false },
+      isReadByAll: { isVisible: false },
+      createdAt: {
+        isVisible: { list: true, filter: true, show: true, edit: false },
       },
-      isReadByAll: {
-        isVisible: { list: true, filter: true, show: true, edit: true },
+      updatedAt: { isVisible: false },
+    },
+    actions: {
+      // Use custom form for creating notifications
+      new: {
+        component: Components.NotificationForm,
+      },
+      // Use custom form for editing notifications
+      edit: {
+        component: Components.NotificationForm,
       },
     },
     translations: {
@@ -366,9 +417,12 @@ export const NotificationResource = {
           Notification: 'Notifications',
         },
         properties: {
-          readBy: 'Read By (Users)',
-          isReadByAll: 'Read By All',
+          title: 'Title',
+          body: 'Message',
+          type: 'Type',
+          targetUserType: 'Audience',
           recipientId: 'Recipient',
+          createdAt: 'Sent At',
         },
       },
     },
