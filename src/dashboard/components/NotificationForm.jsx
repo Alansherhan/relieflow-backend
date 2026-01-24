@@ -31,19 +31,22 @@ const NotificationForm = (props) => {
         { value: 'volunteer', label: '🙋 Volunteers Only' },
     ];
 
-    // Load users for the dropdown
+    // Load users for the dropdown (fetching more records)
     useEffect(() => {
         const loadUsers = async () => {
             setLoadingUsers(true);
             try {
+                // Fetch up to 500 users to ensure we get both public and volunteers
+                // In production, this should be a search, but for now increasing limit helps
                 const response = await api.resourceAction({
                     resourceId: 'userProfile',
                     actionName: 'list',
+                    query: { perPage: 500 }
                 });
                 if (response.data.records) {
                     setUsers(response.data.records.map(r => ({
                         value: r.id,
-                        label: `${r.params.name} (${r.params.email}) - ${r.params.role}`,
+                        label: `${r.params.name} (${r.params.role})`, // Simplified label
                     })));
                 }
             } catch (error) {
@@ -68,8 +71,14 @@ const NotificationForm = (props) => {
     const handleDeliveryModeChange = (mode) => {
         setDeliveryMode(mode);
         if (mode === 'broadcast') {
-            handleChange({ params: { ...record.params, recipientId: null } });
+            // Broadcast mode: Clear recipient, ensure targetUserType is set from dropdown (or default to all)
+            const currentAudience = record.params.targetUserType === 'all' || record.params.targetUserType === 'public' || record.params.targetUserType === 'volunteer'
+                ? record.params.targetUserType
+                : 'all';
+
+            handleChange({ params: { ...record.params, recipientId: null, targetUserType: currentAudience } });
         } else {
+            // Targeted mode: Force targetUserType to 'all' so query logic works (recipientId takes precedence)
             handleChange({ params: { ...record.params, targetUserType: 'all' } });
         }
     };
