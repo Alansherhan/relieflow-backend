@@ -36,7 +36,7 @@ export const AidRequestResource = {
   options: {
     properties: {
       _id: {
-        isVisible: false, // This hides the 'id' property everywhere
+        isVisible: false,
       },
       imageUrl: {
         isVisible: { list: true, filter: false, show: true, edit: true },
@@ -50,31 +50,162 @@ export const AidRequestResource = {
         isVisible: {
           list: true,
           filter: true,
-          show: true,
+          show: false,
           edit: false,
           new: false,
         },
         components: {
           list: Components.LinkComponent,
-          show: Components.MapShow,
         },
       },
       formattedAddress: {
-        isVisible: { list: true, filter: false, show: true, edit: false },
+        isVisible: { list: true, filter: false, show: false, edit: false },
       },
       address: {
-        isVisible: { list: false, filter: false, show: false, edit: true },
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
       },
+      // Hide nested address fields from default rendering
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
+      // Hide top-level location nested fields to prevent validation errors
+      'location.type': { isVisible: false },
+      'location.coordinates': { isVisible: false },
     },
     actions: {
+      // Clean up corrupted location.coordinates before showing/editing
+      show: {
+        before: async (request, context) => {
+          // Remove location.coordinates if it's null to prevent validation errors
+          if (request.payload && request.payload['location.coordinates'] === null) {
+            delete request.payload['location.coordinates'];
+          }
+          return request;
+        },
+        after: async (response, request, context) => {
+          console.log('[DEBUG HOOK] show.after - errors before cleanup:', JSON.stringify(response.record?.errors || {}));
+          // Clean up the record params if location.coordinates is null
+          if (response.record?.params?.['location.coordinates'] === null) {
+            delete response.record.params['location.coordinates'];
+          }
+          // Clear the coordinates.0 error as it's from top-level location, not relevant
+          if (response.record?.errors?.['coordinates.0']) {
+            delete response.record.errors['coordinates.0'];
+            console.log('[DEBUG HOOK] Deleted coordinates.0 error');
+          }
+          console.log('[DEBUG HOOK] show.after - errors after cleanup:', JSON.stringify(response.record?.errors || {}));
+          return response;
+        },
+      },
+      edit: {
+        handler: async (request, response, context) => {
+          const { resource, record, currentAdmin } = context;
+          
+          if (request.method === 'get') {
+            // Just return the record for display
+            return { record: record.toJSON(currentAdmin) };
+          }
+          
+          // POST - handle save
+          const payload = request.payload || {};
+          console.log('[DEBUG HANDLER] edit handler - payload keys:', Object.keys(payload));
+          
+          // Build the update object manually
+          const updateData = {};
+          
+          // Handle simple fields
+          if (payload.calamityType) updateData.calamityType = payload.calamityType;
+          if (payload.imageUrl !== undefined) updateData.imageUrl = payload.imageUrl;
+          if (payload.description !== undefined) updateData.description = payload.description;
+          if (payload.status) updateData.status = payload.status;
+          if (payload.priority) updateData.priority = payload.priority;
+          
+          // Handle address fields - reconstruct from flat keys
+          const address = {};
+          if (payload['address.addressLine1'] !== undefined) address.addressLine1 = payload['address.addressLine1'];
+          if (payload['address.addressLine2'] !== undefined) address.addressLine2 = payload['address.addressLine2'];
+          if (payload['address.addressLine3'] !== undefined) address.addressLine3 = payload['address.addressLine3'];
+          if (payload['address.pinCode'] !== undefined) address.pinCode = payload['address.pinCode'];
+          
+          // Handle address.location if present
+          if (payload['address.location.coordinates.0'] !== undefined && 
+              payload['address.location.coordinates.1'] !== undefined) {
+            const lng = parseFloat(payload['address.location.coordinates.0']);
+            const lat = parseFloat(payload['address.location.coordinates.1']);
+            if (!isNaN(lng) && !isNaN(lat)) {
+              address.location = {
+                type: 'Point',
+                coordinates: [lng, lat]
+              };
+            }
+          }
+          
+          if (Object.keys(address).length > 0) {
+            updateData.address = address;
+          }
+          
+          // Handle top-level location field
+          const coord0 = payload['location.coordinates.0'];
+          const coord1 = payload['location.coordinates.1'];
+          if (coord0 !== undefined && coord1 !== undefined) {
+            const lng = parseFloat(coord0);
+            const lat = parseFloat(coord1);
+            if (!isNaN(lng) && !isNaN(lat)) {
+              updateData.location = {
+                type: payload['location.type'] || 'Point',
+                coordinates: [lng, lat]
+              };
+            }
+          }
+          
+          console.log('[DEBUG HANDLER] Update data:', JSON.stringify(updateData, null, 2));
+          
+          try {
+            // Use Mongoose directly to update
+            const Model = resource._decorated?.mongoose?.model || resource.MongooseModel || AidRequest;
+            await Model.findByIdAndUpdate(record.id(), { $set: updateData });
+            
+            // Reload the record
+            const updatedRecord = await resource.findOne(record.id());
+            
+            return {
+              record: updatedRecord.toJSON(currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
+              notice: {
+                message: 'Record updated successfully',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[DEBUG HANDLER] Save error:', error);
+            return {
+              record: record.toJSON(currentAdmin),
+              notice: {
+                message: `Error saving: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
       createTask: {
         actionType: 'record',
         component: Components.CreateTaskFromAidRequest,
         icon: 'Plus',
         label: 'Create Task',
         handler: async (request, response, context) => {
-          // The actual task creation is handled by the React component
-          // This handler just returns the record for the component to use
           return {
             record: context.record.toJSON(context.currentAdmin),
           };
@@ -84,11 +215,16 @@ export const AidRequestResource = {
     translations: {
       en: {
         labels: {
-          AidRequest: 'Aid Request', // Resource name override
+          AidRequest: 'Aid Request',
         },
         properties: {
-          formattedAddress: 'Address', // Global label for property across all resources
-          address: 'Raw Address',
+          address: 'Location & Address',
+          formattedAddress: 'Address',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
+          'address.location': 'GPS Location',
         },
       },
     },
@@ -155,10 +291,10 @@ export const DonationRequestResource = {
       _id: { isVisible: false },
       amount: {
         isVisible: {
-          list: false, // hide in list
-          filter: true, // allow filtering
-          show: true, // visible in details
-          edit: true, // editable in form
+          list: false,
+          filter: true,
+          show: true,
+          edit: true,
         },
       },
       proofImages: {
@@ -171,10 +307,46 @@ export const DonationRequestResource = {
       },
       itemDetails: {
         isVisible: {
-          list: false, // hide in list
-          filter: true, // allow filtering
-          show: true, // visible in details
-          edit: true, // editable in form
+          list: false,
+          filter: true,
+          show: true,
+          edit: true,
+        },
+      },
+      location: {
+        isVisible: { list: false, filter: false, show: false, edit: false },
+      },
+      address: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
+      },
+      // Hide nested address fields
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
+      // Hide top-level location nested fields
+      'location.type': { isVisible: false },
+      'location.coordinates': { isVisible: false },
+    },
+    translations: {
+      en: {
+        labels: {
+          DonationRequest: 'Donation Requests',
+        },
+        properties: {
+          address: 'Pickup / Delivery Location',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
+          'itemDetails.unit': 'Unit',
         },
       },
     },
@@ -191,26 +363,39 @@ export const ReliefCenterResource = {
     properties: {
       _id: { isVisible: false },
       formattedAddress: {
-        isVisible: { list: true, filter: false, show: true, edit: false },
+        isVisible: { list: true, filter: false, show: false, edit: false },
       },
       address: {
         isVisible: { list: false, filter: false, show: true, edit: true },
         components: {
-          edit: Components.MapPicker
-        }
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
       },
+      // Hide nested address fields
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
     },
     translations: {
       en: {
         labels: {
-          ReliefCenter: 'Relief Centers', // Resource name override
+          ReliefCenter: 'Relief Centers',
         },
         properties: {
-          formattedAddress: 'Address', // Global label for property across all resources
-          address: 'Raw Address',
+          formattedAddress: 'Address',
+          address: 'Shelter Location',
           coordinatorName: 'Coordinator Name',
-          coordinatorNumber: 'Coordinator Number',
+          coordinatorNumber: 'Coordinator Phone',
           shelterName: 'Shelter Name',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
         },
       },
     },
@@ -271,11 +456,23 @@ export const UserProfileResource = {
       _id: { isVisible: false },
       password: { isVisible: false },
       formattedAddress: {
-        isVisible: { list: true, filter: false, show: true, edit: false },
+        isVisible: { list: true, filter: false, show: false, edit: false },
       },
       address: {
-        isVisible: { list: false, filter: false, show: false, edit: true },
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
       },
+      // Hide nested address fields
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
       deletedAt: {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
@@ -289,11 +486,15 @@ export const UserProfileResource = {
     translations: {
       en: {
         labels: {
-          userProfile: 'Users', // Resource name override
+          userProfile: 'Users',
         },
         properties: {
-          formattedAddress: 'Address', // Global label for property across all resources
-          address: 'Raw Address',
+          formattedAddress: 'Address',
+          address: 'Home Address',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
         },
       },
     },
@@ -487,6 +688,25 @@ export const PortalDonationResource = {
           show: Components.ImageComponent,
         },
       },
+      // Pickup address with custom components
+      pickupAddress: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
+      },
+      pickupLocation: {
+        isVisible: { list: false, filter: false, show: false, edit: false },
+      },
+      // Hide nested pickup address fields
+      'pickupAddress.addressLine1': { isVisible: false },
+      'pickupAddress.addressLine2': { isVisible: false },
+      'pickupAddress.addressLine3': { isVisible: false },
+      'pickupAddress.pinCode': { isVisible: false },
+      'pickupAddress.location': { isVisible: false },
+      'pickupAddress.location.type': { isVisible: false },
+      'pickupAddress.location.coordinates': { isVisible: false },
     },
     actions: {
       // Admin can approve submitted donations
@@ -521,6 +741,13 @@ export const PortalDonationResource = {
           donationType: 'Type',
           deliveryMethod: 'Delivery Method',
           isWalletDonation: 'Wallet Donation',
+          pickupAddress: 'Pickup Location',
+          pickupDate: 'Pickup Date',
+          pickupNotes: 'Pickup Instructions',
+          'pickupAddress.addressLine1': 'Street Address',
+          'pickupAddress.addressLine2': 'Area / Locality',
+          'pickupAddress.addressLine3': 'Landmark',
+          'pickupAddress.pinCode': 'PIN Code',
         },
       },
     },

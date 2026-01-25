@@ -7,12 +7,15 @@ const MapPicker = (props) => {
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
 
-    // Initial Values
+    // Initial Values - safely parse and validate
     const getInitialValue = (path) => record.params[`${property.name}.${path}`];
-    const initialLat = parseFloat(getInitialValue('location.coordinates.1')) || 0;
-    const initialLng = parseFloat(getInitialValue('location.coordinates.0')) || 0;
+    const parsedLat = parseFloat(getInitialValue('location.coordinates.1'));
+    const parsedLng = parseFloat(getInitialValue('location.coordinates.0'));
+    const initialLat = !isNaN(parsedLat) ? parsedLat : null;
+    const initialLng = !isNaN(parsedLng) ? parsedLng : null;
+    const hasInitialCoords = initialLat !== null && initialLng !== null && (initialLat !== 0 || initialLng !== 0);
 
-    const [position, setPosition] = useState(initialLat && initialLng ? [initialLat, initialLng] : null);
+    const [position, setPosition] = useState(hasInitialCoords ? [initialLat, initialLng] : null);
     const [searchQuery, setSearchQuery] = useState('');
 
     const [addressData, setAddressData] = useState({
@@ -20,7 +23,7 @@ const MapPicker = (props) => {
         addressLine2: getInitialValue('addressLine2') || '',
         addressLine3: getInitialValue('addressLine3') || '',
         pinCode: getInitialValue('pinCode') || '',
-        location: { type: 'Point', coordinates: [initialLng, initialLat] }
+        location: hasInitialCoords ? { type: 'Point', coordinates: [initialLng, initialLat] } : null
     });
 
     // Helper to trigger AdminJS onChange
@@ -35,20 +38,25 @@ const MapPicker = (props) => {
             }
         }
 
+        // Parse coordinates and check if they're valid
+        const lng = parseFloat(data.location?.coordinates?.[0]);
+        const lat = parseFloat(data.location?.coordinates?.[1]);
+        const hasValidCoordinates = !isNaN(lng) && !isNaN(lat) && (lng !== 0 || lat !== 0);
+
         const payload = {
             addressLine1: data.addressLine1 || '',
             addressLine2: data.addressLine2 || '',
             addressLine3: data.addressLine3 || '',
             pinCode: cleanPin,
-            location: {
-                ...data.location,
-                type: 'Point',
-                coordinates: [
-                    parseFloat(data.location?.coordinates?.[0]) || 0,
-                    parseFloat(data.location?.coordinates?.[1]) || 0
-                ]
-            }
         };
+
+        // Only include location if we have valid coordinates
+        if (hasValidCoordinates) {
+            payload.location = {
+                type: 'Point',
+                coordinates: [lng, lat]
+            };
+        }
 
         console.log('[DEBUG] MapPicker payload (Object):', payload);
         onChange(property.name, payload);
@@ -179,9 +187,17 @@ const MapPicker = (props) => {
         };
     }, []); // Empty deps, run once on mount
 
+    // Track if this is the initial mount to avoid immediate sync
+    const isInitialMount = useRef(true);
+
     // Sync state changes to AdminJS
     // This is the ONLY place where we notify AdminJS of changes
+    // Skip the first render to avoid sending potentially invalid initial data
     useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
         updateRecord(addressData);
     }, [addressData]);
 
@@ -217,9 +233,21 @@ const MapPicker = (props) => {
         }
     };
 
-    // Debug: Log errors on every render
+    // Debug: Log errors and full record structure on every render
+    // Note: The error `coordinates.0` often comes from top-level `location` field, not from address
     if (record?.errors && Object.keys(record.errors).length > 0) {
-        console.log('[DEBUG] Render Record errors:', JSON.stringify(record.errors, null, 2));
+        // Check if error is specifically for our property (address)
+        const relevantErrors = Object.entries(record.errors)
+            .filter(([key]) => key.startsWith(property.name) || key.startsWith(`${property.name}.`))
+            .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
+
+        // Only log if there are errors for our specific property
+        if (Object.keys(relevantErrors).length > 0) {
+            console.log('[DEBUG] Errors for', property.name, ':', JSON.stringify(relevantErrors, null, 2));
+        }
+
+        // The `coordinates.0` error without prefix is from top-level `location` field,
+        // not from `address.location` - it's a separate field in the schema
     }
 
     return (
