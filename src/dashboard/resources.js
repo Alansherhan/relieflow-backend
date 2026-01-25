@@ -36,7 +36,7 @@ export const AidRequestResource = {
   options: {
     properties: {
       _id: {
-        isVisible: false, // This hides the 'id' property everywhere
+        isVisible: false,
       },
       imageUrl: {
         isVisible: { list: true, filter: false, show: true, edit: true },
@@ -50,21 +50,32 @@ export const AidRequestResource = {
         isVisible: {
           list: true,
           filter: true,
-          show: true,
+          show: false,
           edit: false,
           new: false,
         },
         components: {
           list: Components.LinkComponent,
-          show: Components.MapShow,
         },
       },
       formattedAddress: {
-        isVisible: { list: true, filter: false, show: true, edit: false },
+        isVisible: { list: true, filter: false, show: false, edit: false },
       },
       address: {
-        isVisible: { list: false, filter: false, show: false, edit: true },
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
       },
+      // Hide nested address fields from default rendering
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
     },
     actions: {
       createTask: {
@@ -73,8 +84,6 @@ export const AidRequestResource = {
         icon: 'Plus',
         label: 'Create Task',
         handler: async (request, response, context) => {
-          // The actual task creation is handled by the React component
-          // This handler just returns the record for the component to use
           return {
             record: context.record.toJSON(context.currentAdmin),
           };
@@ -84,11 +93,16 @@ export const AidRequestResource = {
     translations: {
       en: {
         labels: {
-          AidRequest: 'Aid Request', // Resource name override
+          AidRequest: 'Aid Request',
         },
         properties: {
-          formattedAddress: 'Address', // Global label for property across all resources
-          address: 'Raw Address',
+          address: 'Location & Address',
+          formattedAddress: 'Address',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
+          'address.location': 'GPS Location',
         },
       },
     },
@@ -155,10 +169,10 @@ export const DonationRequestResource = {
       _id: { isVisible: false },
       amount: {
         isVisible: {
-          list: false, // hide in list
-          filter: true, // allow filtering
-          show: true, // visible in details
-          edit: true, // editable in form
+          list: false,
+          filter: true,
+          show: true,
+          edit: true,
         },
       },
       proofImages: {
@@ -171,10 +185,42 @@ export const DonationRequestResource = {
       },
       itemDetails: {
         isVisible: {
-          list: false, // hide in list
-          filter: true, // allow filtering
-          show: true, // visible in details
-          edit: true, // editable in form
+          list: false,
+          filter: true,
+          show: true,
+          edit: true,
+        },
+      },
+      location: {
+        isVisible: { list: false, filter: false, show: false, edit: false },
+      },
+      address: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
+      },
+      // Hide nested address fields
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
+    },
+    translations: {
+      en: {
+        labels: {
+          DonationRequest: 'Donation Requests',
+        },
+        properties: {
+          address: 'Pickup / Delivery Location',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
         },
       },
     },
@@ -191,26 +237,39 @@ export const ReliefCenterResource = {
     properties: {
       _id: { isVisible: false },
       formattedAddress: {
-        isVisible: { list: true, filter: false, show: true, edit: false },
+        isVisible: { list: true, filter: false, show: false, edit: false },
       },
       address: {
         isVisible: { list: false, filter: false, show: true, edit: true },
         components: {
-          edit: Components.MapPicker
-        }
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
       },
+      // Hide nested address fields
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
     },
     translations: {
       en: {
         labels: {
-          ReliefCenter: 'Relief Centers', // Resource name override
+          ReliefCenter: 'Relief Centers',
         },
         properties: {
-          formattedAddress: 'Address', // Global label for property across all resources
-          address: 'Raw Address',
+          formattedAddress: 'Address',
+          address: 'Shelter Location',
           coordinatorName: 'Coordinator Name',
-          coordinatorNumber: 'Coordinator Number',
+          coordinatorNumber: 'Coordinator Phone',
           shelterName: 'Shelter Name',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
         },
       },
     },
@@ -271,11 +330,23 @@ export const UserProfileResource = {
       _id: { isVisible: false },
       password: { isVisible: false },
       formattedAddress: {
-        isVisible: { list: true, filter: false, show: true, edit: false },
+        isVisible: { list: true, filter: false, show: false, edit: false },
       },
       address: {
-        isVisible: { list: false, filter: false, show: false, edit: true },
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
       },
+      // Hide nested address fields
+      'address.addressLine1': { isVisible: false },
+      'address.addressLine2': { isVisible: false },
+      'address.addressLine3': { isVisible: false },
+      'address.pinCode': { isVisible: false },
+      'address.location': { isVisible: false },
+      'address.location.type': { isVisible: false },
+      'address.location.coordinates': { isVisible: false },
       deletedAt: {
         isVisible: { list: false, filter: false, show: true, edit: true },
       },
@@ -289,11 +360,15 @@ export const UserProfileResource = {
     translations: {
       en: {
         labels: {
-          userProfile: 'Users', // Resource name override
+          userProfile: 'Users',
         },
         properties: {
-          formattedAddress: 'Address', // Global label for property across all resources
-          address: 'Raw Address',
+          formattedAddress: 'Address',
+          address: 'Home Address',
+          'address.addressLine1': 'Street Address',
+          'address.addressLine2': 'Area / Locality',
+          'address.addressLine3': 'Landmark',
+          'address.pinCode': 'PIN Code',
         },
       },
     },
@@ -487,6 +562,25 @@ export const PortalDonationResource = {
           show: Components.ImageComponent,
         },
       },
+      // Pickup address with custom components
+      pickupAddress: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: {
+          show: Components.AddressShow,
+          edit: Components.MapPicker,
+        },
+      },
+      pickupLocation: {
+        isVisible: { list: false, filter: false, show: false, edit: false },
+      },
+      // Hide nested pickup address fields
+      'pickupAddress.addressLine1': { isVisible: false },
+      'pickupAddress.addressLine2': { isVisible: false },
+      'pickupAddress.addressLine3': { isVisible: false },
+      'pickupAddress.pinCode': { isVisible: false },
+      'pickupAddress.location': { isVisible: false },
+      'pickupAddress.location.type': { isVisible: false },
+      'pickupAddress.location.coordinates': { isVisible: false },
     },
     actions: {
       // Admin can approve submitted donations
@@ -521,6 +615,13 @@ export const PortalDonationResource = {
           donationType: 'Type',
           deliveryMethod: 'Delivery Method',
           isWalletDonation: 'Wallet Donation',
+          pickupAddress: 'Pickup Location',
+          pickupDate: 'Pickup Date',
+          pickupNotes: 'Pickup Instructions',
+          'pickupAddress.addressLine1': 'Street Address',
+          'pickupAddress.addressLine2': 'Area / Locality',
+          'pickupAddress.addressLine3': 'Landmark',
+          'pickupAddress.pinCode': 'PIN Code',
         },
       },
     },

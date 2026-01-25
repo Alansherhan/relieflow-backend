@@ -72,6 +72,10 @@ const Components = {
     'NotificationForm',
     path.join(__dirname, 'NotificationForm.jsx')
   ),
+  AddressShow: componentLoader.add(
+    'AddressShow',
+    path.join(__dirname, 'AddressShow.jsx')
+  ),
 };
 
 export { componentLoader, Components };

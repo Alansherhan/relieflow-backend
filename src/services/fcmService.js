@@ -45,18 +45,43 @@ export const sendToUser = async (userId, notification) => {
             return { success: false, reason: 'no_token' };
         }
 
+        // Ensure data values are strings (FCM requirement)
+        const stringifiedData = {};
+        if (notification.data) {
+            Object.keys(notification.data).forEach(key => {
+                stringifiedData[key] = String(notification.data[key]);
+            });
+        }
+
         const message = {
             token: user.fcmToken,
             notification: {
                 title: notification.title,
                 body: notification.body,
             },
-            data: notification.data || {},
+            data: stringifiedData,
             android: {
                 priority: 'high',
                 notification: {
                     sound: 'default',
                     channelId: 'relief_notifications',
+                    priority: 'high',
+                    visibility: 'public',
+                    defaultSound: true,
+                    defaultVibrateTimings: true,
+                },
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        alert: {
+                            title: notification.title,
+                            body: notification.body,
+                        },
+                        sound: 'default',
+                        badge: 1,
+                        'content-available': 1,
+                    },
                 },
             },
         };
@@ -120,6 +145,14 @@ export const sendToRole = async (role, notification) => {
             return { success: true, sent: 0 };
         }
 
+        // Ensure data values are strings (FCM requirement)
+        const stringifiedData = {};
+        if (notification.data) {
+            Object.keys(notification.data).forEach(key => {
+                stringifiedData[key] = String(notification.data[key]);
+            });
+        }
+
         // Send multicast message
         const message = {
             tokens,
@@ -127,12 +160,29 @@ export const sendToRole = async (role, notification) => {
                 title: notification.title,
                 body: notification.body,
             },
-            data: notification.data || {},
+            data: stringifiedData,
             android: {
                 priority: 'high',
                 notification: {
                     sound: 'default',
                     channelId: 'relief_notifications',
+                    priority: 'high',
+                    visibility: 'public',
+                    defaultSound: true,
+                    defaultVibrateTimings: true,
+                },
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        alert: {
+                            title: notification.title,
+                            body: notification.body,
+                        },
+                        sound: 'default',
+                        badge: 1,
+                        'content-available': 1,
+                    },
                 },
             },
         };
