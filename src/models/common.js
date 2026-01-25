@@ -46,6 +46,12 @@ export const itemSchema= new mongoose.Schema({
         type:Number,
         required:true,
     },
+    unit:{
+        type:String,
+        required:true,
+        enum:["pieces","kg","liters","packs","boxes","units"],
+        default:"pieces"
+    },
     // Track how much of this item has been fulfilled by donations
     fulfilledQuantity:{
         type:Number,
