@@ -1,4 +1,6 @@
 import AidRequest from "../models/AidRequest.js";
+import Notification from "../models/Notification.js";
+// FCM is now sent automatically via Notification model post-save hook
 
 
 
@@ -64,6 +66,25 @@ export const addAidRequest = async (req, res) => {
         })
 
         const populatedAidData = await aidCreated.populate(["calamityType","aidRequestedBy"])
+
+        // Notify User
+        // NOTE: FCM is now sent automatically via Notification model post-save hook
+        if (aidRequestedBy) {
+            try {
+                await Notification.create({
+                    title: 'Aid Request Submitted',
+                    body: `Your request for "${calamityType}" aid has been received.`,
+                    recipientId: aidRequestedBy,
+                    type: 'aid_request_submitted',
+                    data: { aidRequestId: aidCreated._id.toString() },
+                });
+            } catch (e) {
+                console.error('Failed to create user notification:', e);
+            }
+        }
+
+        // NOTE: Volunteer notifications are sent when admin ACCEPTS the request
+        // (via AdminJS accept action), not on creation
 
         return res.status(201).json({
             success: true,
@@ -138,17 +159,12 @@ export const getMyAidRequests = async (req, res) => {
         // Note: JWT payload has 'id' not '_id'
         const userId = req.user._id || req.user.id;
         
-        console.log('=== getMyAidRequests DEBUG ===');
-        console.log('req.user:', req.user);
-        console.log('userId:', userId);
         
         const aidRequests = await AidRequest.find({ aidRequestedBy: userId })
             .populate('calamityType')
             .sort({ createdAt: -1 })
             .lean();
         
-        console.log('Found aidRequests:', aidRequests.length);
-        console.log('aidRequests:', JSON.stringify(aidRequests, null, 2));
         
         return res.status(200).json({
             success: true,

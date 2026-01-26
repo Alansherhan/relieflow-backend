@@ -1,6 +1,7 @@
 import TaskSchema from "../models/Task.js";
 import AidRequest from "../models/AidRequest.js";
 import Notification from "../models/Notification.js";
+// FCM is now sent automatically via Notification model post-save hook
 
 export const assignTask = async (req, res) => {
   const taskName = req.body.taskName;
@@ -382,11 +383,13 @@ export const claimTask = async (req, res) => {
     await task.save();
 
     // Create notification for the volunteer who claimed
+    // NOTE: FCM is now sent automatically via Notification model post-save hook
     await Notification.create({
       title: 'Task Claimed Successfully',
       body: `You have claimed: ${task.taskName}`,
       recipientId: volunteerId,
       type: 'task_assigned',
+      data: { taskId: task._id.toString() },
     });
 
     console.log(`[claimTask] Task ${id} claimed by volunteer ${volunteerId}. Slots: ${task.assignedVolunteers.length}/${task.volunteersNeeded}`);
@@ -461,6 +464,23 @@ export const createTaskFromAidRequest = async (req, res) => {
     await aidRequest.save();
 
     console.log('[createTaskFromAidRequest] Task created:', task._id);
+
+    // Notify Aid Requester if they are a registered user
+    // NOTE: FCM is now sent automatically via Notification model post-save hook
+    if (aidRequest.aidRequestedBy) {
+        try {
+            await Notification.create({
+                title: 'Aid Request Accepted',
+                body: `Your request "${aidRequest.calamityType}" is being processed. A task has been created.`,
+                recipientId: aidRequest.aidRequestedBy,
+                type: 'aid_request_accepted',
+                data: { aidRequestId: aidRequest._id.toString(), taskId: task._id.toString() },
+            });
+            console.log(`[createTaskFromAidRequest] Created notification for user ${aidRequest.aidRequestedBy}`);
+        } catch (error) {
+            console.error('[createTaskFromAidRequest] Failed to create notification:', error);
+        }
+    }
 
     return res.status(201).json({
       success: true,

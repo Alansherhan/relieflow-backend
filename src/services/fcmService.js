@@ -38,12 +38,14 @@ initializeFirebase();
  */
 export const sendToUser = async (userId, notification) => {
     try {
+        console.log(`[FCM] Attempting to send push to user: ${userId}`, { notification });
         const user = await userProfile.findById(userId).select('fcmToken');
 
         if (!user?.fcmToken) {
-            console.log(`No FCM token for user ${userId}`);
+            console.warn(`[FCM] No FCM token found for user ${userId}`);
             return { success: false, reason: 'no_token' };
         }
+        console.log(`[FCM] Found token for user ${userId}: ${user.fcmToken.substring(0, 10)}...`);
 
         // Ensure data values are strings (FCM requirement)
         const stringifiedData = {};
@@ -87,19 +89,19 @@ export const sendToUser = async (userId, notification) => {
         };
 
         const response = await admin.messaging().send(message);
-        console.log(`Push notification sent to user ${userId}:`, response);
+        console.log(`[FCM] Push notification sent successfully to user ${userId}. Message ID: ${response}`);
         return { success: true, messageId: response };
     } catch (error) {
-        console.error(`Error sending push to user ${userId}:`, error.message);
+        console.error(`[FCM] Error sending push to user ${userId}:`, error);
 
         // Handle invalid token - remove it from database
         if (error.code === 'messaging/invalid-registration-token' ||
             error.code === 'messaging/registration-token-not-registered') {
             await userProfile.findByIdAndUpdate(userId, { fcmToken: null });
-            console.log(`Removed invalid FCM token for user ${userId}`);
+            console.warn(`[FCM] Removed invalid FCM token for user ${userId}`);
         }
 
-        return { success: false, error: error.message };
+        return { success: false, error: error.message, code: error.code };
     }
 };
 
@@ -127,6 +129,7 @@ export const sendToMultipleUsers = async (userIds, notification) => {
  */
 export const sendToRole = async (role, notification) => {
     try {
+        console.log(`[FCM] Sending multicast to role: ${role}`, { notification });
         const query = role === 'all'
             ? { fcmToken: { $ne: null } }
             : { role, fcmToken: { $ne: null } };
@@ -134,9 +137,10 @@ export const sendToRole = async (role, notification) => {
         const users = await userProfile.find(query).select('_id fcmToken');
 
         if (users.length === 0) {
-            console.log(`No users with FCM tokens found for role: ${role}`);
+            console.warn(`[FCM] No users found with tokens for role: ${role}`);
             return { success: true, sent: 0 };
         }
+        console.log(`[FCM] Found ${users.length} users with tokens for role: ${role}`);
 
         // Get all tokens
         const tokens = users.map(u => u.fcmToken).filter(Boolean);
@@ -188,14 +192,16 @@ export const sendToRole = async (role, notification) => {
         };
 
         const response = await admin.messaging().sendEachForMulticast(message);
-        console.log(`Multicast sent to ${role}: ${response.successCount} success, ${response.failureCount} failed`);
+        console.log(`[FCM] Multicast sent to ${role}: ${response.successCount} success, ${response.failureCount} failed`);
 
         // Handle failed tokens
         if (response.failureCount > 0) {
+            console.warn(`[FCM] Multicast failures:`, response.responses.filter(r => !r.success).map(r => r.error));
             const failedTokens = [];
             response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
                     failedTokens.push(tokens[idx]);
+                    // console.log(`[FCM] Failed token details:`, tokens[idx], resp.error);
                 }
             });
             // Optionally clean up invalid tokens here
@@ -215,11 +221,16 @@ export const sendToRole = async (role, notification) => {
  */
 export const registerToken = async (userId, token) => {
     try {
-        await userProfile.findByIdAndUpdate(userId, { fcmToken: token });
-        console.log(`FCM token registered for user ${userId}`);
+        console.log(`[FCM] Registering token for user: ${userId}`);
+        const updatedUser = await userProfile.findByIdAndUpdate(userId, { fcmToken: token }, { new: true });
+        if (updatedUser) {
+            console.log(`[FCM] FCM token successfully registered for user ${userId}`);
+        } else {
+            console.warn(`[FCM] User ${userId} not found during token registration`);
+        }
         return { success: true };
     } catch (error) {
-        console.error(`Error registering FCM token for user ${userId}:`, error.message);
+        console.error(`[FCM] Error registering FCM token for user ${userId}:`, error);
         return { success: false, error: error.message };
     }
 };

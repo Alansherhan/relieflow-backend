@@ -3,6 +3,8 @@ import PortalDonation from "../models/PortalDonation.js";
 import DonationRequest from "../models/DonationRequest.js";
 import AdminWallet from "../models/AdminWallet.js";
 import Task from "../models/Task.js";
+import Notification from "../models/Notification.js";
+// FCM is now sent automatically via Notification model post-save hook
 
 /**
  * Get all active donation requests (public - no auth required)
@@ -121,7 +123,23 @@ export const acceptDonationRequest = async (req, res) => {
       itemDetails: donationType === 'item' ? itemDetails : undefined,
       status: 'accepted',
     });
-    
+
+    // Notify the user who requested the donation
+    // NOTE: FCM is now sent automatically via Notification model post-save hook
+    if (donationRequest.requestedBy) {
+        try {
+            await Notification.create({
+                title: 'Donation Incoming!',
+                body: `${donorName} has offered to donate ${donationType === 'cash' ? amount : 'items'} for: ${donationRequest.title}`,
+                recipientId: donationRequest.requestedBy,
+                type: 'donation_request_accepted',
+                data: { donationRequestId: donationRequest._id.toString(), portalDonationId: portalDonation._id.toString() },
+            });
+        } catch (error) {
+            console.error('[acceptDonationRequest] Failed to create notification:', error);
+        }
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Donation request accepted successfully',
@@ -361,6 +379,22 @@ export const submitItemDonation = async (req, res) => {
       }
     }
     
+
+    // START FCM: Notify Donor of successful submission
+    // NOTE: FCM is now sent automatically via Notification model post-save hook
+    try {
+        await Notification.create({
+            title: 'Donation Submitted',
+            body: 'Thank you! Your donation has been submitted for review.',
+            recipientId: userId,
+            type: 'system_notification',
+            data: { portalDonationId: portalDonation._id.toString() },
+        });
+    } catch (e) {
+        console.error('[submitItemDonation] Failed to create notification:', e);
+    }
+    // END FCM
+
     return res.status(200).json({
       success: true,
       message: 'Donation submitted! Pending admin verification.',
@@ -501,6 +535,33 @@ export const requestPickup = async (req, res) => {
       }
     }
     
+    // START FCM: Notify Donor and Broadcast to Volunteers
+    // NOTE: FCM is now sent automatically via Notification model post-save hook
+    try {
+        // 1. Notify Donor
+        await Notification.create({
+            title: 'Pickup Requested',
+            body: 'Your pickup request has been received. A volunteer will be assigned shortly.',
+            recipientId: userId,
+            type: 'system_notification',
+            data: { taskId: task._id.toString() },
+        });
+
+        // 2. Broadcast to Volunteers (New Pickup Task Available)
+        await Notification.create({
+            title: 'New Pickup Task Available',
+            body: `Pickup from ${pickupAddress?.addressLine2 || 'Unknown Location'}`,
+            recipientId: null, // null = broadcast
+            targetUserType: 'volunteer',
+            type: 'task_open_broadcast',
+            data: { taskId: task._id.toString() },
+        });
+
+    } catch (e) {
+        console.error('[requestPickup] Failed to create notifications:', e);
+    }
+    // END FCM
+
     return res.status(200).json({
       success: true,
       message: 'Pickup requested! A volunteer will contact you soon.',
