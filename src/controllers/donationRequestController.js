@@ -1,4 +1,6 @@
 import DonationRequest from "../models/DonationRequest.js";
+import Notification from "../models/Notification.js";
+// FCM is now sent automatically via Notification model post-save hook
 
 export const addDonationRequest = async (req, res) => {
     // For multipart/form-data, req.body fields might need parsing if they are sent as JSON strings
@@ -85,6 +87,23 @@ export const addDonationRequest = async (req, res) => {
             proofImages: proofImages || [],
             status: 'pending',
         });
+
+        // Notify User
+        // NOTE: FCM is now sent automatically via Notification model post-save hook
+        if (requestedBy) {
+            try {
+                await Notification.create({
+                    title: 'Donation Request Submitted',
+                    body: `Your donation request "${title}" has been received and is pending review.`,
+                    recipientId: requestedBy,
+                    type: 'donation_request_submitted',
+                    targetUserType: 'public',
+                    data: { donationRequestId: donationRequest._id.toString() },
+                });
+            } catch (e) {
+                console.error('Failed to create user notification:', e);
+            }
+        }
 
         return res.status(201).json({
             success: true,
