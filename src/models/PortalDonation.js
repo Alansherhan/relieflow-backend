@@ -6,10 +6,9 @@ import { itemSchema, addressSchema, locationSchema } from "./common.js";
  * Supports both logged-in users and anonymous donors.
  * 
  * Status Flow:
- * - accepted: Donor committed to fulfill a request
- * - submitted: Proof uploaded or payment made (pending admin validation)
- * - pickup_requested: Donor needs volunteer pickup
- * - pickup_accepted: Volunteer claimed the pickup task
+ * - pending_delivery: Item donation with self-delivery, waiting for donor to deliver
+ * - awaiting_volunteer: Pickup requested, waiting for volunteer to claim
+ * - pickup_scheduled: Volunteer claimed the pickup task
  * - completed: Donation verified and complete
  * - cancelled: Donor cancelled
  */
@@ -58,11 +57,11 @@ const portalDonationSchema = new mongoose.Schema({
   // Delivery method (for item donations)
   deliveryMethod: {
     type: String,
-    enum: ['self_delivery', 'pickup_requested', 'not_applicable'],
+    enum: ['self_delivery', 'pickup', 'not_applicable'],
     default: 'not_applicable',
   },
 
-  // Pickup details (for Flow C - Pickup Request)
+  // Pickup details (for pickup flow)
   pickupAddress: {
     type: addressSchema,
     required: false,
@@ -103,14 +102,13 @@ const portalDonationSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: [
-      'accepted',           // Donor committed to fulfill
-      'submitted',          // Proof uploaded / payment made
-      'pickup_requested',   // Waiting for volunteer
-      'pickup_accepted',    // Volunteer claimed pickup
-      'completed',          // Done and verified
-      'cancelled',          // Donor cancelled
+      'pending_delivery',     // Self-delivery chosen, waiting for donor to deliver
+      'awaiting_volunteer',   // Pickup requested, waiting for volunteer
+      'pickup_scheduled',     // Volunteer claimed pickup
+      'completed',            // Done and verified
+      'cancelled',            // Donor cancelled
     ],
-    default: 'accepted',
+    required: true,  // Must be set explicitly based on flow
   },
 
   // For direct wallet donations (not linked to a specific request)

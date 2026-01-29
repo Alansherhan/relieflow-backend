@@ -16,7 +16,7 @@ import {
   donateToWallet,
   guestDonateToWallet,
 } from '../controllers/walletController.js';
-import { protect } from '../middleWare/authMiddleware.js';
+import { protect, optionalProtect } from '../middleWare/authMiddleware.js';
 import upload from '../middleWare/upload.js';
 import PortalDonation from '../models/PortalDonation.js';
 
@@ -28,7 +28,7 @@ const router = Router();
 
 // Browse donation requests
 router.get('/public/donation-requests', getPublicDonationRequests);
-router.get('/public/donation-requests/:id', getPublicDonationRequestById);
+router.get('/public/donation-requests/:id', optionalProtect(), getPublicDonationRequestById);
 
 // Wallet info (public display)
 router.get('/public/wallet-info', getWalletInfo);

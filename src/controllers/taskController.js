@@ -1,6 +1,7 @@
 import TaskSchema from "../models/Task.js";
 import AidRequest from "../models/AidRequest.js";
 import Notification from "../models/Notification.js";
+import PortalDonation from "../models/PortalDonation.js";
 // FCM is now sent automatically via Notification model post-save hook
 
 export const assignTask = async (req, res) => {
@@ -352,10 +353,23 @@ export const completeTaskWithProof = async (req, res) => {
           type: requestType,
           data: { taskId: task._id.toString() },
         });
-        console.log(`[completeTaskWithProof] Completion notification sent to requester ${requesterId}`);
+      console.log(`[completeTaskWithProof] Completion notification sent to requester ${requesterId}`);
       }
     } catch (notifErr) {
       console.error('[completeTaskWithProof] Error sending requester completion notification:', notifErr);
+    }
+    
+    // Sync PortalDonation status for pickup tasks
+    // When volunteer completes a pickup task, update linked PortalDonation to completed
+    try {
+        const portalDonation = await PortalDonation.findOne({ pickupTask: task._id });
+        if (portalDonation && portalDonation.status === 'pickup_scheduled') {
+            portalDonation.status = 'completed';
+            await portalDonation.save();
+            console.log(`[completeTaskWithProof] PortalDonation ${portalDonation._id} updated to completed`);
+        }
+    } catch (error) {
+        console.error('[completeTaskWithProof] Error syncing PortalDonation status:', error);
     }
 
     return res.status(200).json({
@@ -553,6 +567,19 @@ export const claimTask = async (req, res) => {
         }
     } catch (error) {
         console.error('[claimTask] Error creating requester notification:', error);
+    }
+    
+    // Sync PortalDonation status for pickup tasks
+    // When volunteer claims a pickup task, update linked PortalDonation to pickup_scheduled
+    try {
+        const portalDonation = await PortalDonation.findOne({ pickupTask: task._id });
+        if (portalDonation && portalDonation.status === 'awaiting_volunteer') {
+            portalDonation.status = 'pickup_scheduled';
+            await portalDonation.save();
+            console.log(`[claimTask] PortalDonation ${portalDonation._id} updated to pickup_scheduled`);
+        }
+    } catch (error) {
+        console.error('[claimTask] Error syncing PortalDonation status:', error);
     }
 
     return res.status(200).json({
