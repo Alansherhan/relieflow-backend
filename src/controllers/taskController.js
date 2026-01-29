@@ -103,9 +103,21 @@ export const getMyTasks = async (req, res) => {
     }
 
     const tasks = await TaskSchema.find(query)
-      .populate('aidRequest')
-      .populate('donationRequest')
-      .populate('assignedVolunteers')
+      .populate({
+        path: 'aidRequest',
+        populate: {
+          path: 'aidRequestedBy',
+          model: 'userProfile'
+        }
+      })
+      .populate({
+        path: 'donationRequest',
+        populate: {
+          path: 'requestedBy',
+          model: 'userProfile'
+        }
+      })
+      .populate('assignedVolunteers') // Keep this one simple or populate if needed
       .sort({ _id: -1 }); // Newest first
 
     return res.status(200).json({
@@ -160,6 +172,84 @@ export const updateTaskStatus = async (req, res) => {
     await task.save();
 
     console.log(`[updateTaskStatus] Task ${id} updated to ${status}`);
+
+    // Send notifications based on new status
+    const normalizedStatus = status.toLowerCase();
+    
+    if (normalizedStatus === 'accepted') {
+      // Notify volunteer of successful acceptance
+      try {
+        await Notification.create({
+          title: 'Task Accepted',
+          body: `You have accepted: ${task.taskName}`,
+          recipientId: volunteerId,
+          type: 'task_assigned',
+          data: { taskId: task._id.toString() },
+        });
+        console.log(`[updateTaskStatus] Notification sent to volunteer ${volunteerId}`);
+      } catch (notifErr) {
+        console.error('[updateTaskStatus] Error sending volunteer notification:', notifErr);
+      }
+
+      // Notify public user that volunteer is working on their request
+      try {
+        const populatedTask = await TaskSchema.findById(id)
+          .populate('aidRequest')
+          .populate('donationRequest');
+        
+        const requesterId = populatedTask.aidRequest?.aidRequestedBy || 
+                            populatedTask.donationRequest?.requestedBy;
+        if (requesterId) {
+          await Notification.create({
+            title: 'Volunteer Assigned',
+            body: 'A volunteer has accepted your request and is now working on it.',
+            recipientId: requesterId,
+            type: 'aid_request_in_progress',
+            data: { taskId: task._id.toString() },
+          });
+          console.log(`[updateTaskStatus] Notification sent to requester ${requesterId}`);
+        }
+      } catch (notifErr) {
+        console.error('[updateTaskStatus] Error sending requester notification:', notifErr);
+      }
+    } else if (normalizedStatus === 'completed') {
+      // Notify volunteer of successful completion
+      try {
+        await Notification.create({
+          title: 'Task Completed',
+          body: `You have successfully completed: ${task.taskName}`,
+          recipientId: volunteerId,
+          type: 'task_assigned',
+          data: { taskId: task._id.toString() },
+        });
+        console.log(`[updateTaskStatus] Completion notification sent to volunteer ${volunteerId}`);
+      } catch (notifErr) {
+        console.error('[updateTaskStatus] Error sending volunteer completion notification:', notifErr);
+      }
+
+      // Notify public user that request is complete
+      try {
+        const populatedTask = await TaskSchema.findById(id)
+          .populate('aidRequest')
+          .populate('donationRequest');
+        
+        const requesterId = populatedTask.aidRequest?.aidRequestedBy || 
+                            populatedTask.donationRequest?.requestedBy;
+        if (requesterId) {
+          const requestType = task.taskType === 'aid' ? 'aid_request_completed' : 'donation_request_completed';
+          await Notification.create({
+            title: 'Request Completed',
+            body: 'Great news! Your request has been successfully completed.',
+            recipientId: requesterId,
+            type: requestType,
+            data: { taskId: task._id.toString() },
+          });
+          console.log(`[updateTaskStatus] Completion notification sent to requester ${requesterId}`);
+        }
+      } catch (notifErr) {
+        console.error('[updateTaskStatus] Error sending requester completion notification:', notifErr);
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -230,6 +320,44 @@ export const completeTaskWithProof = async (req, res) => {
 
     console.log(`[completeTaskWithProof] Task ${id} completed with proof: ${proofImageUrl}`);
 
+    // Send completion notifications
+    // 1. Notify the volunteer
+    try {
+      await Notification.create({
+        title: 'Task Completed',
+        body: `You have successfully completed: ${task.taskName}`,
+        recipientId: volunteerId,
+        type: 'task_assigned',
+        data: { taskId: task._id.toString() },
+      });
+      console.log(`[completeTaskWithProof] Completion notification sent to volunteer ${volunteerId}`);
+    } catch (notifErr) {
+      console.error('[completeTaskWithProof] Error sending volunteer completion notification:', notifErr);
+    }
+
+    // 2. Notify the public user
+    try {
+      const populatedTask = await TaskSchema.findById(id)
+        .populate('aidRequest')
+        .populate('donationRequest');
+      
+      const requesterId = populatedTask.aidRequest?.aidRequestedBy || 
+                          populatedTask.donationRequest?.requestedBy;
+      if (requesterId) {
+        const requestType = task.taskType === 'aid' ? 'aid_request_completed' : 'donation_request_completed';
+        await Notification.create({
+          title: 'Request Completed',
+          body: 'Great news! Your request has been successfully completed.',
+          recipientId: requesterId,
+          type: requestType,
+          data: { taskId: task._id.toString() },
+        });
+        console.log(`[completeTaskWithProof] Completion notification sent to requester ${requesterId}`);
+      }
+    } catch (notifErr) {
+      console.error('[completeTaskWithProof] Error sending requester completion notification:', notifErr);
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Task completed successfully',
@@ -258,7 +386,7 @@ export const getOpenTasks = async (req, res) => {
       tasks = await TaskSchema.aggregate([
         {
           $match: {
-            status: 'open'
+            status: { $in: ['open', 'accepted'] }
           }
         },
         {
@@ -287,7 +415,7 @@ export const getOpenTasks = async (req, res) => {
       tasks = await TaskSchema.aggregate([
         {
           $match: {
-            status: 'open'
+            status: { $in: ['open', 'accepted'] }
           }
         },
         {
@@ -310,8 +438,20 @@ export const getOpenTasks = async (req, res) => {
       
       // Populate references after aggregation
       await TaskSchema.populate(tasks, [
-        { path: 'aidRequest' },
-        { path: 'donationRequest' },
+        { 
+          path: 'aidRequest',
+          populate: {
+            path: 'aidRequestedBy',
+            model: 'userProfile'
+          }
+        },
+        { 
+          path: 'donationRequest',
+          populate: {
+            path: 'requestedBy',
+            model: 'userProfile'
+          }
+        },
         { path: 'assignedVolunteers' }
       ]);
     }
@@ -338,8 +478,8 @@ export const claimTask = async (req, res) => {
     console.log('[claimTask] Task ID:', id);
     console.log('[claimTask] Volunteer ID:', volunteerId);
 
-    // Find task
-    const task = await TaskSchema.findById(id);
+    // Find task and populate aidRequest to get requester details
+    const task = await TaskSchema.findById(id).populate('aidRequest');
     if (!task) {
       return res.status(404).json({
         success: false,
@@ -375,28 +515,49 @@ export const claimTask = async (req, res) => {
     // Add volunteer to assignedVolunteers array
     task.assignedVolunteers.push(volunteerId);
     
-    // If all slots are filled, change status to 'assigned'
-    if (task.assignedVolunteers.length >= task.volunteersNeeded) {
-      task.status = 'assigned';
-    }
+    // DIRECTLY ACCEPT TASK (Skip 'assigned' status)
+    // Even if multiple slots, if someone claims, it's considered "active/accepted"
+    // Note: getOpenTasks must now include 'accepted' tasks with open slots
+    task.status = 'accepted';
     
     await task.save();
 
-    // Create notification for the volunteer who claimed
-    // NOTE: FCM is now sent automatically via Notification model post-save hook
-    await Notification.create({
-      title: 'Task Claimed Successfully',
-      body: `You have claimed: ${task.taskName}`,
-      recipientId: volunteerId,
-      type: 'task_assigned',
-      data: { taskId: task._id.toString() },
-    });
+    console.log(`[claimTask] Task ${id} claimed/accepted by volunteer ${volunteerId}`);
 
-    console.log(`[claimTask] Task ${id} claimed by volunteer ${volunteerId}. Slots: ${task.assignedVolunteers.length}/${task.volunteersNeeded}`);
+    // Create notification for the volunteer
+    try {
+        await Notification.create({
+            title: 'Task Accepted',
+            body: `You are now working on: ${task.taskName}`,
+            recipientId: volunteerId,
+            type: 'task_assigned',
+            data: { taskId: task._id.toString() },
+        });
+    } catch (error) {
+        console.error('[claimTask] Error creating volunteer notification:', error);
+    }
+
+    // Notify public user immediately
+    // (Moved from updateTaskStatus since we skip the manual accept step)
+    try {
+        const reqId = task.aidRequest?.aidRequestedBy || task.donationRequest?.requestedBy;
+        if (reqId) {
+            await Notification.create({
+                title: 'Volunteer Assigned',
+                body: 'A volunteer has accepted your request and is now working on it.',
+                recipientId: reqId,
+                type: 'aid_request_in_progress',
+                data: { taskId: task._id.toString() },
+            });
+            console.log(`[claimTask] Notification sent to requester ${reqId}`);
+        }
+    } catch (error) {
+        console.error('[claimTask] Error creating requester notification:', error);
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Task claimed successfully',
+      message: 'Task claimed and accepted successfully',
       data: task
     });
   } catch (error) {
@@ -459,15 +620,18 @@ export const createTaskFromAidRequest = async (req, res) => {
     
     const task = await TaskSchema.create(taskData);
 
+    // Check if it was already accepted to avoid duplicate notifications
+    const isAlreadyAccepted = aidRequest.status === 'accepted';
+
     // Update aid request status to accepted (being processed)
     aidRequest.status = 'accepted';
     await aidRequest.save();
 
     console.log('[createTaskFromAidRequest] Task created:', task._id);
 
-    // Notify Aid Requester if they are a registered user
+    // Notify Aid Requester if they are a registered user AND it wasn't already accepted
     // NOTE: FCM is now sent automatically via Notification model post-save hook
-    if (aidRequest.aidRequestedBy) {
+    if (aidRequest.aidRequestedBy && !isAlreadyAccepted) {
         try {
             await Notification.create({
                 title: 'Aid Request Accepted',

@@ -43,7 +43,7 @@ const donationRequestSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['accepted', 'pending', 'rejected', 'completed', 'partially_fulfilled'],
+    enum: ['accepted', 'pending', 'rejected', 'completed', 'partially_fulfilled', 'in_progress'],
     default: 'pending',
   },
   // Fixed: Changed from undefined imageUrl to String array

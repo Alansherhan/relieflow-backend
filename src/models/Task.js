@@ -118,26 +118,44 @@ taskSchema.post('save', async function (doc) {
                     body: `A new task is available: ${doc.taskName}`,
                     recipientId: null, // null = broadcast to all
                     type: 'task_open_broadcast',
+                    targetUserType: 'volunteer',
                 });
                 console.log('[Task Hook] Broadcast notification created');
             }
 
-            // Notify public user who made the aid request
-            if (doc.aidRequest) {
-                const aidReq = await AidRequest.findById(doc.aidRequest);
-                if (aidReq && aidReq.aidRequestedBy) {
-                    console.log('[Task Hook] Notifying public user:', aidReq.aidRequestedBy);
-                    await Notification.create({
-                        title: 'Your Request is Being Processed',
-                        body: `Your aid request is now being handled by our volunteers.`,
-                        recipientId: aidReq.aidRequestedBy,
-                        type: 'aid_request_in_progress',
-                    });
+            // Notify public user logic moved to when volunteer specifically accepts/claims the task
+            // This prevents premature "Being Processed" notifications
+        }
+    } catch (error) {
+        console.error('[Task Hook] Error creating task notification:', error);
+    }
+
+    try {
+        // Sync status to linked requests
+        // If task is accepted (in progress) or completed, update the underlying request
+        if (['accepted', 'completed', 'rejected', 'open'].includes(doc.status)) {
+            let targetStatus;
+            
+            if (doc.status === 'accepted') {
+                targetStatus = 'in_progress';
+            } else if (doc.status === 'completed') {
+                targetStatus = 'completed'; 
+            } else if (doc.status === 'rejected') {
+                targetStatus = 'accepted'; // Revert to accepted (available for others or re-assignment)
+            }
+            
+            if (targetStatus) {
+                if (doc.taskType === 'aid' && doc.aidRequest) {
+                    await AidRequest.findByIdAndUpdate(doc.aidRequest, { status: targetStatus });
+                    console.log(`[Task Hook] Updated AidRequest ${doc.aidRequest} status to ${targetStatus}`);
+                } else if (doc.taskType === 'donation' && doc.donationRequest) {
+                    await DonationRequest.findByIdAndUpdate(doc.donationRequest, { status: targetStatus });
+                    console.log(`[Task Hook] Updated DonationRequest ${doc.donationRequest} status to ${targetStatus}`);
                 }
             }
         }
     } catch (error) {
-        console.error('[Task Hook] Error creating task notification:', error);
+        console.error('[Task Hook] Error syncing request status:', error);
     }
 });
 

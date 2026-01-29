@@ -31,6 +31,53 @@ export const AdminResource = {
   },
 };
 
+const parseAidRequestPayload = (payload) => {
+  const updateData = {};
+  
+  if (payload.calamityType) updateData.calamityType = payload.calamityType;
+  if (payload.imageUrl !== undefined) updateData.imageUrl = payload.imageUrl;
+  if (payload.description !== undefined) updateData.description = payload.description;
+  if (payload.status) updateData.status = payload.status;
+  if (payload.priority) updateData.priority = payload.priority;
+  if (payload.aidRequestedBy) updateData.aidRequestedBy = payload.aidRequestedBy;
+
+  const address = {};
+  if (payload['address.addressLine1'] !== undefined) address.addressLine1 = payload['address.addressLine1'];
+  if (payload['address.addressLine2'] !== undefined) address.addressLine2 = payload['address.addressLine2'];
+  if (payload['address.addressLine3'] !== undefined) address.addressLine3 = payload['address.addressLine3'];
+  if (payload['address.pinCode'] !== undefined) address.pinCode = payload['address.pinCode'];
+  
+  if (payload['address.location.coordinates.0'] !== undefined && 
+      payload['address.location.coordinates.1'] !== undefined) {
+    const lng = parseFloat(payload['address.location.coordinates.0']);
+    const lat = parseFloat(payload['address.location.coordinates.1']);
+    if (!isNaN(lng) && !isNaN(lat)) {
+      address.location = {
+        type: 'Point',
+        coordinates: [lng, lat]
+      };
+    }
+  }
+  
+  if (Object.keys(address).length > 0) {
+    updateData.address = address;
+  }
+  
+  const coord0 = payload['location.coordinates.0'];
+  const coord1 = payload['location.coordinates.1'];
+  if (coord0 !== undefined && coord1 !== undefined) {
+    const lng = parseFloat(coord0);
+    const lat = parseFloat(coord1);
+    if (!isNaN(lng) && !isNaN(lat)) {
+      updateData.location = {
+        type: payload['location.type'] || 'Point',
+        coordinates: [lng, lat]
+      };
+    }
+  }
+  return updateData;
+};
+
 export const AidRequestResource = {
   resource: AidRequest,
   options: {
@@ -105,6 +152,48 @@ export const AidRequestResource = {
           return response;
         },
       },
+      new: {
+        handler: async (request, response, context) => {
+          const { resource, currentAdmin } = context;
+          
+          if (request.method === 'get') {
+            return { record: {} };
+          }
+          
+          const payload = request.payload || {};
+          console.log('[DEBUG HANDLER] new handler - payload keys:', Object.keys(payload));
+          
+          const updateData = parseAidRequestPayload(payload);
+          if (!updateData.status) updateData.status = 'pending';
+          
+          console.log('[DEBUG HANDLER] Create data:', JSON.stringify(updateData, null, 2));
+          
+          try {
+            const Model = resource._decorated?.mongoose?.model || resource.MongooseModel || AidRequest;
+            const newRecord = await Model.create(updateData);
+            
+            return {
+              record: newRecord.toJSON(currentAdmin),
+              redirectUrl: context.h.resourceUrl({
+                resourceId: resource.id(),
+              }),
+              notice: {
+                message: 'Aid Request created successfully',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[DEBUG HANDLER] Create error:', error);
+            return {
+              record: { params: payload, errors: { payload: { message: error.message } } },
+              notice: {
+                message: `Error creating: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
       edit: {
         handler: async (request, response, context) => {
           const { resource, record, currentAdmin } = context;
@@ -118,53 +207,7 @@ export const AidRequestResource = {
           const payload = request.payload || {};
           console.log('[DEBUG HANDLER] edit handler - payload keys:', Object.keys(payload));
           
-          // Build the update object manually
-          const updateData = {};
-          
-          // Handle simple fields
-          if (payload.calamityType) updateData.calamityType = payload.calamityType;
-          if (payload.imageUrl !== undefined) updateData.imageUrl = payload.imageUrl;
-          if (payload.description !== undefined) updateData.description = payload.description;
-          if (payload.status) updateData.status = payload.status;
-          if (payload.priority) updateData.priority = payload.priority;
-          
-          // Handle address fields - reconstruct from flat keys
-          const address = {};
-          if (payload['address.addressLine1'] !== undefined) address.addressLine1 = payload['address.addressLine1'];
-          if (payload['address.addressLine2'] !== undefined) address.addressLine2 = payload['address.addressLine2'];
-          if (payload['address.addressLine3'] !== undefined) address.addressLine3 = payload['address.addressLine3'];
-          if (payload['address.pinCode'] !== undefined) address.pinCode = payload['address.pinCode'];
-          
-          // Handle address.location if present
-          if (payload['address.location.coordinates.0'] !== undefined && 
-              payload['address.location.coordinates.1'] !== undefined) {
-            const lng = parseFloat(payload['address.location.coordinates.0']);
-            const lat = parseFloat(payload['address.location.coordinates.1']);
-            if (!isNaN(lng) && !isNaN(lat)) {
-              address.location = {
-                type: 'Point',
-                coordinates: [lng, lat]
-              };
-            }
-          }
-          
-          if (Object.keys(address).length > 0) {
-            updateData.address = address;
-          }
-          
-          // Handle top-level location field
-          const coord0 = payload['location.coordinates.0'];
-          const coord1 = payload['location.coordinates.1'];
-          if (coord0 !== undefined && coord1 !== undefined) {
-            const lng = parseFloat(coord0);
-            const lat = parseFloat(coord1);
-            if (!isNaN(lng) && !isNaN(lat)) {
-              updateData.location = {
-                type: payload['location.type'] || 'Point',
-                coordinates: [lng, lat]
-              };
-            }
-          }
+          const updateData = parseAidRequestPayload(payload);
           
           console.log('[DEBUG HANDLER] Update data:', JSON.stringify(updateData, null, 2));
           
@@ -258,6 +301,7 @@ export const AidRequestResource = {
       // Quick Accept action - visible only for pending requests
       accept: {
         actionType: 'record',
+        component: false,
         icon: 'Check',
         label: 'Accept',
         guard: 'Are you sure you want to accept this aid request?',
@@ -287,19 +331,17 @@ export const AidRequestResource = {
               console.log(`[AdminJS] Created aid_request_accepted notification for user ${requesterId}`);
             }
             
-            // Broadcast to volunteers - NOW is the right time
-            await Notification.create({
-              title: 'New Aid Request Available',
-              body: `New ${calamityName} aid request at ${location}`,
-              recipientId: null,
-              targetUserType: 'volunteer',
-              type: 'aid_request_in_progress',
-              data: { aidRequestId: record.id() },
-            });
-            console.log(`[AdminJS] Broadcasted aid request to volunteers`);
+            // NOTE: Volunteer notifications are handled when admin creates a Task
+            // (via Task model post-save hook), NOT when accepting the request
+            console.log(`[AdminJS] Aid request accepted. Volunteer notification deferred until task creation.`);
             
             return {
               record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
               notice: {
                 message: 'Aid request accepted successfully! Volunteers have been notified.',
                 type: 'success',
@@ -320,6 +362,7 @@ export const AidRequestResource = {
       // Quick Reject action - visible only for pending requests
       reject: {
         actionType: 'record',
+        component: false,
         icon: 'X',
         label: 'Reject',
         guard: 'Are you sure you want to reject this aid request?',
@@ -349,6 +392,11 @@ export const AidRequestResource = {
             
             return {
               record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
               notice: {
                 message: 'Aid request rejected.',
                 type: 'success',
@@ -541,6 +589,7 @@ export const DonationRequestResource = {
       // Quick Accept action - visible only for pending requests
       accept: {
         actionType: 'record',
+        component: false,
         icon: 'Check',
         label: 'Accept',
         guard: 'Are you sure you want to accept this donation request?',
@@ -569,6 +618,11 @@ export const DonationRequestResource = {
             
             return {
               record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
               notice: {
                 message: 'Donation request accepted successfully!',
                 type: 'success',
@@ -589,6 +643,7 @@ export const DonationRequestResource = {
       // Quick Reject action - visible only for pending requests
       reject: {
         actionType: 'record',
+        component: false,
         icon: 'X',
         label: 'Reject',
         guard: 'Are you sure you want to reject this donation request?',
@@ -617,6 +672,11 @@ export const DonationRequestResource = {
             
             return {
               record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
               notice: {
                 message: 'Donation request rejected.',
                 type: 'success',
@@ -984,6 +1044,7 @@ export const PortalDonationResource = {
       // Admin can approve submitted donations
       approve: {
         actionType: 'record',
+        component: false,
         icon: 'Check',
         label: 'Approve',
         guard: 'Are you sure you want to approve this donation?',
@@ -1012,6 +1073,11 @@ export const PortalDonationResource = {
           
           return {
             record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+            redirectUrl: context.h.recordActionUrl({
+              resourceId: resource.id(),
+              recordId: record.id(),
+              actionName: 'show',
+            }),
             notice: {
               message: 'Donation approved successfully!',
               type: 'success',
