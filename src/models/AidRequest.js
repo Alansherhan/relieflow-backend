@@ -24,7 +24,7 @@ const aidRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['accepted', 'pending', 'rejected',"completed"],
+    enum: ['accepted', 'pending', 'rejected', 'completed', 'in_progress'],
   },
   priority: {
     type: String,

@@ -14,7 +14,7 @@ import disasterTip from '../models/disasterTip.js';
 import Notification from '../models/Notification.js';
 import PortalDonation from '../models/PortalDonation.js';
 import AdminWallet from '../models/AdminWallet.js';
-import { sendToUser, sendToRole } from '../services/fcmService.js';
+// FCM is now sent automatically via Notification model post-save hook
 
 export const AdminResource = {
   resource: adminUser,
@@ -29,6 +29,53 @@ export const AdminResource = {
       direction: 'desc',
     },
   },
+};
+
+const parseAidRequestPayload = (payload) => {
+  const updateData = {};
+  
+  if (payload.calamityType) updateData.calamityType = payload.calamityType;
+  if (payload.imageUrl !== undefined) updateData.imageUrl = payload.imageUrl;
+  if (payload.description !== undefined) updateData.description = payload.description;
+  if (payload.status) updateData.status = payload.status;
+  if (payload.priority) updateData.priority = payload.priority;
+  if (payload.aidRequestedBy) updateData.aidRequestedBy = payload.aidRequestedBy;
+
+  const address = {};
+  if (payload['address.addressLine1'] !== undefined) address.addressLine1 = payload['address.addressLine1'];
+  if (payload['address.addressLine2'] !== undefined) address.addressLine2 = payload['address.addressLine2'];
+  if (payload['address.addressLine3'] !== undefined) address.addressLine3 = payload['address.addressLine3'];
+  if (payload['address.pinCode'] !== undefined) address.pinCode = payload['address.pinCode'];
+  
+  if (payload['address.location.coordinates.0'] !== undefined && 
+      payload['address.location.coordinates.1'] !== undefined) {
+    const lng = parseFloat(payload['address.location.coordinates.0']);
+    const lat = parseFloat(payload['address.location.coordinates.1']);
+    if (!isNaN(lng) && !isNaN(lat)) {
+      address.location = {
+        type: 'Point',
+        coordinates: [lng, lat]
+      };
+    }
+  }
+  
+  if (Object.keys(address).length > 0) {
+    updateData.address = address;
+  }
+  
+  const coord0 = payload['location.coordinates.0'];
+  const coord1 = payload['location.coordinates.1'];
+  if (coord0 !== undefined && coord1 !== undefined) {
+    const lng = parseFloat(coord0);
+    const lat = parseFloat(coord1);
+    if (!isNaN(lng) && !isNaN(lat)) {
+      updateData.location = {
+        type: payload['location.type'] || 'Point',
+        coordinates: [lng, lat]
+      };
+    }
+  }
+  return updateData;
 };
 
 export const AidRequestResource = {
@@ -105,6 +152,48 @@ export const AidRequestResource = {
           return response;
         },
       },
+      new: {
+        handler: async (request, response, context) => {
+          const { resource, currentAdmin } = context;
+          
+          if (request.method === 'get') {
+            return { record: {} };
+          }
+          
+          const payload = request.payload || {};
+          console.log('[DEBUG HANDLER] new handler - payload keys:', Object.keys(payload));
+          
+          const updateData = parseAidRequestPayload(payload);
+          if (!updateData.status) updateData.status = 'pending';
+          
+          console.log('[DEBUG HANDLER] Create data:', JSON.stringify(updateData, null, 2));
+          
+          try {
+            const Model = resource._decorated?.mongoose?.model || resource.MongooseModel || AidRequest;
+            const newRecord = await Model.create(updateData);
+            
+            return {
+              record: newRecord.toJSON(currentAdmin),
+              redirectUrl: context.h.resourceUrl({
+                resourceId: resource.id(),
+              }),
+              notice: {
+                message: 'Aid Request created successfully',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[DEBUG HANDLER] Create error:', error);
+            return {
+              record: { params: payload, errors: { payload: { message: error.message } } },
+              notice: {
+                message: `Error creating: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
       edit: {
         handler: async (request, response, context) => {
           const { resource, record, currentAdmin } = context;
@@ -118,60 +207,58 @@ export const AidRequestResource = {
           const payload = request.payload || {};
           console.log('[DEBUG HANDLER] edit handler - payload keys:', Object.keys(payload));
           
-          // Build the update object manually
-          const updateData = {};
-          
-          // Handle simple fields
-          if (payload.calamityType) updateData.calamityType = payload.calamityType;
-          if (payload.imageUrl !== undefined) updateData.imageUrl = payload.imageUrl;
-          if (payload.description !== undefined) updateData.description = payload.description;
-          if (payload.status) updateData.status = payload.status;
-          if (payload.priority) updateData.priority = payload.priority;
-          
-          // Handle address fields - reconstruct from flat keys
-          const address = {};
-          if (payload['address.addressLine1'] !== undefined) address.addressLine1 = payload['address.addressLine1'];
-          if (payload['address.addressLine2'] !== undefined) address.addressLine2 = payload['address.addressLine2'];
-          if (payload['address.addressLine3'] !== undefined) address.addressLine3 = payload['address.addressLine3'];
-          if (payload['address.pinCode'] !== undefined) address.pinCode = payload['address.pinCode'];
-          
-          // Handle address.location if present
-          if (payload['address.location.coordinates.0'] !== undefined && 
-              payload['address.location.coordinates.1'] !== undefined) {
-            const lng = parseFloat(payload['address.location.coordinates.0']);
-            const lat = parseFloat(payload['address.location.coordinates.1']);
-            if (!isNaN(lng) && !isNaN(lat)) {
-              address.location = {
-                type: 'Point',
-                coordinates: [lng, lat]
-              };
-            }
-          }
-          
-          if (Object.keys(address).length > 0) {
-            updateData.address = address;
-          }
-          
-          // Handle top-level location field
-          const coord0 = payload['location.coordinates.0'];
-          const coord1 = payload['location.coordinates.1'];
-          if (coord0 !== undefined && coord1 !== undefined) {
-            const lng = parseFloat(coord0);
-            const lat = parseFloat(coord1);
-            if (!isNaN(lng) && !isNaN(lat)) {
-              updateData.location = {
-                type: payload['location.type'] || 'Point',
-                coordinates: [lng, lat]
-              };
-            }
-          }
+          const updateData = parseAidRequestPayload(payload);
           
           console.log('[DEBUG HANDLER] Update data:', JSON.stringify(updateData, null, 2));
           
           try {
             // Use Mongoose directly to update
             const Model = resource._decorated?.mongoose?.model || resource.MongooseModel || AidRequest;
+            
+            // Check if status is changing
+            const oldStatus = record.params?.status;
+            const newStatus = updateData.status;
+            const statusChanged = newStatus && oldStatus !== newStatus;
+            
             await Model.findByIdAndUpdate(record.id(), { $set: updateData });
+            
+            // Send notification if status changed
+            // NOTE: FCM is now sent automatically via Notification model post-save hook
+            if (statusChanged) {
+              const requesterId = record.params?.aidRequestedBy;
+              if (requesterId) {
+                try {
+                  let notificationTitle, notificationBody, notificationType;
+                  
+                  if (newStatus === 'rejected') {
+                    notificationTitle = 'Aid Request Update';
+                    notificationBody = 'Unfortunately, your aid request could not be processed at this time.';
+                    notificationType = 'aid_request_rejected';
+                  } else if (newStatus === 'completed') {
+                    notificationTitle = 'Aid Request Completed';
+                    notificationBody = 'Great news! Your aid request has been successfully completed.';
+                    notificationType = 'aid_request_completed';
+                  } else if (newStatus === 'accepted') {
+                    notificationTitle = 'Aid Request Accepted';
+                    notificationBody = 'Your aid request has been accepted and is being processed.';
+                    notificationType = 'aid_request_accepted';
+                  }
+                  
+                  if (notificationTitle) {
+                    await Notification.create({
+                      title: notificationTitle,
+                      body: notificationBody,
+                      recipientId: requesterId,
+                      type: notificationType,
+                      data: { aidRequestId: record.id() },
+                    });
+                    console.log(`[AdminJS] Created ${notificationType} notification for user ${requesterId}`);
+                  }
+                } catch (notifError) {
+                  console.error('[AdminJS] Error creating status notification:', notifError);
+                }
+              }
+            }
             
             // Reload the record
             const updatedRecord = await resource.findOne(record.id());
@@ -209,6 +296,122 @@ export const AidRequestResource = {
           return {
             record: context.record.toJSON(context.currentAdmin),
           };
+        },
+      },
+      // Quick Accept action - visible only for pending requests
+      accept: {
+        actionType: 'record',
+        component: false,
+        icon: 'Check',
+        label: 'Accept',
+        guard: 'Are you sure you want to accept this aid request?',
+        isVisible: (context) => context.record?.params?.status === 'pending',
+        showInDrawer: false,
+        handler: async (request, response, context) => {
+          const { record, resource } = context;
+          
+          try {
+            // Update status to accepted
+            const Model = resource._decorated?.mongoose?.model || resource.MongooseModel || AidRequest;
+            await Model.findByIdAndUpdate(record.id(), { $set: { status: 'accepted' } });
+            
+            const requesterId = record.params?.aidRequestedBy;
+            const calamityName = record.params?.['calamity.calamityName'] || 'Aid';
+            const location = record.params?.['address.addressLine2'] || 'Unknown Location';
+            
+            // Notify the requester
+            if (requesterId) {
+              await Notification.create({
+                title: 'Aid Request Accepted',
+                body: 'Your aid request has been accepted and is being processed.',
+                recipientId: requesterId,
+                type: 'aid_request_accepted',
+                data: { aidRequestId: record.id() },
+              });
+              console.log(`[AdminJS] Created aid_request_accepted notification for user ${requesterId}`);
+            }
+            
+            // NOTE: Volunteer notifications are handled when admin creates a Task
+            // (via Task model post-save hook), NOT when accepting the request
+            console.log(`[AdminJS] Aid request accepted. Volunteer notification deferred until task creation.`);
+            
+            return {
+              record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
+              notice: {
+                message: 'Aid request accepted successfully! Volunteers have been notified.',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[AdminJS] Accept action error:', error);
+            return {
+              record: record.toJSON(context.currentAdmin),
+              notice: {
+                message: `Error accepting request: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
+      // Quick Reject action - visible only for pending requests
+      reject: {
+        actionType: 'record',
+        component: false,
+        icon: 'X',
+        label: 'Reject',
+        guard: 'Are you sure you want to reject this aid request?',
+        isVisible: (context) => context.record?.params?.status === 'pending',
+        showInDrawer: false,
+        handler: async (request, response, context) => {
+          const { record, resource } = context;
+          
+          try {
+            // Update status to rejected
+            const Model = resource._decorated?.mongoose?.model || resource.MongooseModel || AidRequest;
+            await Model.findByIdAndUpdate(record.id(), { $set: { status: 'rejected' } });
+            
+            const requesterId = record.params?.aidRequestedBy;
+            
+            // Notify the requester
+            if (requesterId) {
+              await Notification.create({
+                title: 'Aid Request Update',
+                body: 'Unfortunately, your aid request could not be processed at this time.',
+                recipientId: requesterId,
+                type: 'aid_request_rejected',
+                data: { aidRequestId: record.id() },
+              });
+              console.log(`[AdminJS] Created aid_request_rejected notification for user ${requesterId}`);
+            }
+            
+            return {
+              record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
+              notice: {
+                message: 'Aid request rejected.',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[AdminJS] Reject action error:', error);
+            return {
+              record: record.toJSON(context.currentAdmin),
+              notice: {
+                message: `Error rejecting request: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
         },
       },
     },
@@ -334,6 +537,163 @@ export const DonationRequestResource = {
       // Hide top-level location nested fields
       'location.type': { isVisible: false },
       'location.coordinates': { isVisible: false },
+    },
+    actions: {
+      // Add notification on status change
+      edit: {
+        after: async (response, request, context) => {
+          // Check if this was a successful edit
+          if (request.method === 'post' && response.record && !response.record.errors) {
+            const newStatus = request.payload?.status;
+            const oldStatus = context.record?.params?.status;
+            
+            if (newStatus && oldStatus !== newStatus) {
+              const requesterId = context.record?.params?.requestedBy;
+              if (requesterId) {
+                try {
+                  let notificationTitle, notificationBody, notificationType;
+                  
+                  if (newStatus === 'accepted') {
+                    notificationTitle = 'Donation Request Approved';
+                    notificationBody = 'Your donation request has been approved and is now visible to donors.';
+                    notificationType = 'donation_request_accepted';
+                  } else if (newStatus === 'rejected') {
+                    notificationTitle = 'Donation Request Update';
+                    notificationBody = 'Your donation request could not be approved at this time.';
+                    notificationType = 'donation_request_rejected';
+                  } else if (newStatus === 'completed') {
+                    notificationTitle = 'Donation Request Fulfilled';
+                    notificationBody = 'Great news! Your donation request has been fully fulfilled.';
+                    notificationType = 'donation_request_completed';
+                  }
+                  
+                  if (notificationTitle) {
+                    await Notification.create({
+                      title: notificationTitle,
+                      body: notificationBody,
+                      recipientId: requesterId,
+                      type: notificationType,
+                      data: { donationRequestId: response.record.id },
+                    });
+                    console.log(`[AdminJS] Created ${notificationType} notification for user ${requesterId}`);
+                  }
+                } catch (notifError) {
+                  console.error('[AdminJS] Error creating status notification:', notifError);
+                }
+              }
+            }
+          }
+          return response;
+        },
+      },
+      // Quick Accept action - visible only for pending requests
+      accept: {
+        actionType: 'record',
+        component: false,
+        icon: 'Check',
+        label: 'Accept',
+        guard: 'Are you sure you want to accept this donation request?',
+        isVisible: (context) => context.record?.params?.status === 'pending',
+        showInDrawer: false,
+        handler: async (request, response, context) => {
+          const { record, resource } = context;
+          
+          try {
+            // Update status to accepted
+            await DonationRequest.findByIdAndUpdate(record.id(), { $set: { status: 'accepted' } });
+            
+            const requesterId = record.params?.requestedBy;
+            
+            // Notify the requester
+            if (requesterId) {
+              await Notification.create({
+                title: 'Donation Request Approved',
+                body: 'Your donation request has been approved and is now visible to donors.',
+                recipientId: requesterId,
+                type: 'donation_request_accepted',
+                data: { donationRequestId: record.id() },
+              });
+              console.log(`[AdminJS] Created donation_request_accepted notification for user ${requesterId}`);
+            }
+            
+            return {
+              record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
+              notice: {
+                message: 'Donation request accepted successfully!',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[AdminJS] Accept action error:', error);
+            return {
+              record: record.toJSON(context.currentAdmin),
+              notice: {
+                message: `Error accepting request: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
+      // Quick Reject action - visible only for pending requests
+      reject: {
+        actionType: 'record',
+        component: false,
+        icon: 'X',
+        label: 'Reject',
+        guard: 'Are you sure you want to reject this donation request?',
+        isVisible: (context) => context.record?.params?.status === 'pending',
+        showInDrawer: false,
+        handler: async (request, response, context) => {
+          const { record, resource } = context;
+          
+          try {
+            // Update status to rejected
+            await DonationRequest.findByIdAndUpdate(record.id(), { $set: { status: 'rejected' } });
+            
+            const requesterId = record.params?.requestedBy;
+            
+            // Notify the requester
+            if (requesterId) {
+              await Notification.create({
+                title: 'Donation Request Update',
+                body: 'Your donation request could not be approved at this time.',
+                recipientId: requesterId,
+                type: 'donation_request_rejected',
+                data: { donationRequestId: record.id() },
+              });
+              console.log(`[AdminJS] Created donation_request_rejected notification for user ${requesterId}`);
+            }
+            
+            return {
+              record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
+              notice: {
+                message: 'Donation request rejected.',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[AdminJS] Reject action error:', error);
+            return {
+              record: record.toJSON(context.currentAdmin),
+              notice: {
+                message: `Error rejecting request: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
     },
     translations: {
       en: {
@@ -605,37 +965,9 @@ export const NotificationResource = {
     },
     actions: {
       // Use custom form for creating notifications
+      // NOTE: FCM is now sent automatically via Notification model post-save hook
       new: {
         component: Components.NotificationForm,
-        after: async (response) => {
-          // Send FCM push notification after creating
-          if (response.record && !response.record.errors) {
-            const notification = response.record.params;
-            const pushData = {
-              title: notification.title,
-              body: notification.body,
-              data: {
-                type: notification.type,
-                notificationId: notification._id,
-              },
-            };
-
-            try {
-              if (notification.recipientId) {
-                // Targeted notification
-                await sendToUser(notification.recipientId, pushData);
-                console.log(`FCM sent to user ${notification.recipientId}`);
-              } else {
-                // Broadcast notification
-                await sendToRole(notification.targetUserType || 'all', pushData);
-                console.log(`FCM broadcast to ${notification.targetUserType || 'all'}`);
-              }
-            } catch (error) {
-              console.error('FCM send error:', error.message);
-            }
-          }
-          return response;
-        },
       },
       // Use custom form for editing notifications
       edit: {
@@ -712,6 +1044,7 @@ export const PortalDonationResource = {
       // Admin can approve submitted donations
       approve: {
         actionType: 'record',
+        component: false,
         icon: 'Check',
         label: 'Approve',
         guard: 'Are you sure you want to approve this donation?',
@@ -719,8 +1052,32 @@ export const PortalDonationResource = {
         handler: async (request, response, context) => {
           const { record, resource } = context;
           await resource.update(record.id(), { status: 'completed' });
+          
+          // Send notification to donor if they have an account
+          // NOTE: FCM is now sent automatically via Notification model post-save hook
+          const donorId = record.params?.donor;
+          if (donorId) {
+            try {
+              await Notification.create({
+                title: 'Donation Approved!',
+                body: 'Thank you! Your donation has been verified and approved.',
+                recipientId: donorId,
+                type: 'donation_approved',
+                data: { donationId: record.id() }, // Extra data for FCM
+              });
+              console.log(`[AdminJS] Created approval notification for donor ${donorId}`);
+            } catch (error) {
+              console.error('[AdminJS] Error creating approval notification:', error);
+            }
+          }
+          
           return {
             record: (await resource.findOne(record.id())).toJSON(context.currentAdmin),
+            redirectUrl: context.h.recordActionUrl({
+              resourceId: resource.id(),
+              recordId: record.id(),
+              actionName: 'show',
+            }),
             notice: {
               message: 'Donation approved successfully!',
               type: 'success',

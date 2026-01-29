@@ -3,6 +3,8 @@ import PortalDonation from "../models/PortalDonation.js";
 import DonationRequest from "../models/DonationRequest.js";
 import AdminWallet from "../models/AdminWallet.js";
 import Task from "../models/Task.js";
+import Notification from "../models/Notification.js";
+// FCM is now sent automatically via Notification model post-save hook
 
 /**
  * Get all active donation requests (public - no auth required)
@@ -12,7 +14,7 @@ export const getPublicDonationRequests = async (req, res) => {
     const { status, donationType, priority, search, limit = 20, page = 1 } = req.query;
     
     const filter = {
-      status: { $in: ['pending', 'accepted', 'partially_fulfilled'] },
+      status: { $in: ['accepted', 'partially_fulfilled'] },
     };
     
     if (donationType) filter.donationType = donationType;
@@ -58,6 +60,7 @@ export const getPublicDonationRequests = async (req, res) => {
 
 /**
  * Get single donation request details (public)
+ * If authenticated (via optionalProtect), also includes user's active donation for this request
  */
 export const getPublicDonationRequestById = async (req, res) => {
   try {
@@ -72,9 +75,21 @@ export const getPublicDonationRequestById = async (req, res) => {
       });
     }
     
+    // If user is authenticated, check for their active donation on this request
+    let myActiveDonation = null;
+    if (req.user) {
+      const userId = req.user._id || req.user.id;
+      myActiveDonation = await PortalDonation.findOne({
+        donor: userId,
+        donationRequest: id,
+        status: { $in: ['pending_delivery', 'awaiting_volunteer'] },
+      }).lean();
+    }
+    
     return res.status(200).json({
       success: true,
       data: request,
+      myActiveDonation, // null if not authenticated or no active donation
     });
   } catch (error) {
     console.error('Error fetching donation request:', error);
@@ -86,13 +101,25 @@ export const getPublicDonationRequestById = async (req, res) => {
   }
 };
 
+
 /**
  * Accept a donation request (authenticated user)
- * Creates a PortalDonation with status 'accepted'
+ * For items: requires deliveryMethod (self_delivery or pickup)
+ * For cash: completes immediately
  */
 export const acceptDonationRequest = async (req, res) => {
   try {
-    const { donationRequestId, donationType, amount, itemDetails } = req.body;
+    const { 
+      donationRequestId, 
+      donationType, 
+      amount, 
+      itemDetails,
+      deliveryMethod,  // Required for item donations: 'self_delivery' or 'pickup'
+      pickupAddress,
+      pickupLocation,
+      pickupDate,
+      pickupNotes,
+    } = req.body;
     const userId = req.user?._id || req.user?.id;
     
     // Validate donation request exists
@@ -104,10 +131,32 @@ export const acceptDonationRequest = async (req, res) => {
       });
     }
     
+    const actualDonationType = donationType || donationRequest.donationType;
+    
+    // For item donations, deliveryMethod is required
+    if (actualDonationType === 'item') {
+      if (!deliveryMethod || !['self_delivery', 'pickup'].includes(deliveryMethod)) {
+        return res.status(400).json({
+          success: false,
+          message: 'deliveryMethod is required for item donations (self_delivery or pickup)',
+        });
+      }
+    }
+    
     // Get user info
     const donorName = req.user?.name || 'Anonymous';
     const donorEmail = req.user?.email;
     const donorPhone = req.user?.phoneNumber;
+    
+    // Determine status based on donation type and delivery method
+    let status;
+    if (actualDonationType === 'cash') {
+      status = 'completed';  // Cash donations complete immediately
+    } else if (deliveryMethod === 'self_delivery') {
+      status = 'pending_delivery';
+    } else {
+      status = 'awaiting_volunteer';
+    }
     
     // Create portal donation
     const portalDonation = await PortalDonation.create({
@@ -116,15 +165,104 @@ export const acceptDonationRequest = async (req, res) => {
       donorEmail,
       donorPhone,
       donationRequest: donationRequestId,
-      donationType: donationType || donationRequest.donationType,
-      amount: donationType === 'cash' ? amount : undefined,
-      itemDetails: donationType === 'item' ? itemDetails : undefined,
-      status: 'accepted',
+      donationType: actualDonationType,
+      amount: actualDonationType === 'cash' ? amount : undefined,
+      itemDetails: actualDonationType === 'item' ? itemDetails : undefined,
+      deliveryMethod: actualDonationType === 'item' ? deliveryMethod : 'not_applicable',
+      pickupAddress: deliveryMethod === 'pickup' ? pickupAddress : undefined,
+      pickupLocation: deliveryMethod === 'pickup' ? pickupLocation : undefined,
+      pickupDate: deliveryMethod === 'pickup' && pickupDate ? new Date(pickupDate) : undefined,
+      pickupNotes: deliveryMethod === 'pickup' ? pickupNotes : undefined,
+      status,
     });
     
+    // If pickup, create a Task for volunteers
+    if (deliveryMethod === 'pickup') {
+      const taskData = {
+        taskName: `Pickup donation from ${donorName}`,
+        taskType: 'donation',
+        status: 'open',
+        priority: 'medium',
+        volunteersNeeded: 1,
+        donationRequest: donationRequestId,
+      };
+      
+      // Add location if provided
+      if (pickupLocation && pickupLocation.coordinates && Array.isArray(pickupLocation.coordinates)) {
+        taskData.location = {
+          type: 'Point',
+          coordinates: pickupLocation.coordinates,
+        };
+      }
+      
+      const task = await Task.create(taskData);
+      portalDonation.pickupTask = task._id;
+      await portalDonation.save();
+    }
+    
+    // Update DonationRequest fulfilled quantities for item donations
+    if (actualDonationType === 'item' && itemDetails && itemDetails.length > 0) {
+      if (donationRequest.itemDetails) {
+        itemDetails.forEach(donatedItem => {
+          const requestItem = donationRequest.itemDetails.find(
+            ri => ri.category === donatedItem.category
+          );
+          if (requestItem) {
+            requestItem.fulfilledQuantity = (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
+          }
+        });
+        
+        // Check fulfillment status
+        const allFulfilled = donationRequest.itemDetails.every(
+          item => (item.fulfilledQuantity || 0) >= item.quantity
+        );
+        const partiallyFulfilled = donationRequest.itemDetails.some(
+          item => (item.fulfilledQuantity || 0) > 0
+        );
+        
+        if (allFulfilled) {
+          donationRequest.status = 'completed';
+        } else if (partiallyFulfilled) {
+          donationRequest.status = 'partially_fulfilled';
+        }
+        
+        await donationRequest.save();
+      }
+    }
+    
+    // Update cash donation request
+    if (actualDonationType === 'cash' && amount) {
+      donationRequest.fulfilledAmount = (donationRequest.fulfilledAmount || 0) + amount;
+      if (donationRequest.fulfilledAmount >= donationRequest.amount) {
+        donationRequest.status = 'completed';
+      } else {
+        donationRequest.status = 'partially_fulfilled';
+      }
+      await donationRequest.save();
+    }
+
+    // Notify the user who requested the donation
+    if (donationRequest.requestedBy) {
+        try {
+            await Notification.create({
+                title: 'Donation Incoming!',
+                body: `${donorName} has offered to donate ${actualDonationType === 'cash' ? `₹${amount}` : 'items'} for: ${donationRequest.title}`,
+                recipientId: donationRequest.requestedBy,
+                type: 'donation_request_accepted',
+                data: { donationRequestId: donationRequest._id.toString(), portalDonationId: portalDonation._id.toString() },
+            });
+        } catch (error) {
+            console.error('[acceptDonationRequest] Failed to create notification:', error);
+        }
+    }
+
     return res.status(201).json({
       success: true,
-      message: 'Donation request accepted successfully',
+      message: actualDonationType === 'cash' 
+        ? 'Thank you for your donation!' 
+        : deliveryMethod === 'pickup' 
+          ? 'Pickup requested! A volunteer will contact you soon.'
+          : 'Donation accepted! Please deliver to the specified location.',
       data: portalDonation,
     });
   } catch (error) {
@@ -325,42 +463,26 @@ export const submitItemDonation = async (req, res) => {
     if (itemDetails) portalDonation.itemDetails = itemDetails;
     if (proofImage) portalDonation.proofImage = proofImage;
     if (notes) portalDonation.notes = notes;
-    portalDonation.deliveryMethod = 'self_delivery';
-    portalDonation.status = 'submitted'; // Pending admin validation
+    // Status changes to completed (fulfillment qty already updated at accept time)
+    portalDonation.status = 'completed';
     await portalDonation.save();
     
-    // Update fulfilled quantities on the DonationRequest
-    if (portalDonation.donationRequest && donatedItems && donatedItems.length > 0) {
-      const donationRequest = await DonationRequest.findById(portalDonation.donationRequest);
-      if (donationRequest && donationRequest.itemDetails) {
-        // Update fulfilled quantities for each donated item
-        donatedItems.forEach(donatedItem => {
-          const requestItem = donationRequest.itemDetails.find(
-            ri => ri.category === donatedItem.category
-          );
-          if (requestItem) {
-            requestItem.fulfilledQuantity = (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
-          }
+
+    // START FCM: Notify Donor of successful submission
+    // NOTE: FCM is now sent automatically via Notification model post-save hook
+    try {
+        await Notification.create({
+            title: 'Donation Submitted',
+            body: 'Thank you! Your donation has been submitted for review.',
+            recipientId: userId,
+            type: 'system_notification',
+            data: { portalDonationId: portalDonation._id.toString() },
         });
-        
-        // Check if all items are fully fulfilled
-        const allFulfilled = donationRequest.itemDetails.every(
-          item => (item.fulfilledQuantity || 0) >= item.quantity
-        );
-        const partiallyFulfilled = donationRequest.itemDetails.some(
-          item => (item.fulfilledQuantity || 0) > 0
-        );
-        
-        if (allFulfilled) {
-          donationRequest.status = 'completed';
-        } else if (partiallyFulfilled) {
-          donationRequest.status = 'partially_fulfilled';
-        }
-        
-        await donationRequest.save();
-      }
+    } catch (e) {
+        console.error('[submitItemDonation] Failed to create notification:', e);
     }
-    
+    // END FCM
+
     return res.status(200).json({
       success: true,
       message: 'Donation submitted! Pending admin verification.',
@@ -460,13 +582,13 @@ export const requestPickup = async (req, res) => {
     const donatedItems = itemDetails || portalDonation.itemDetails;
     if (itemDetails) portalDonation.itemDetails = itemDetails;
     if (proofImage) portalDonation.proofImage = proofImage;
-    portalDonation.deliveryMethod = 'pickup_requested';
+    portalDonation.deliveryMethod = 'pickup';
     portalDonation.pickupAddress = pickupAddress;
     portalDonation.pickupLocation = pickupLocation;
     portalDonation.pickupDate = pickupDate ? new Date(pickupDate) : undefined;
     portalDonation.pickupNotes = pickupNotes;
     portalDonation.pickupTask = task._id;
-    portalDonation.status = 'pickup_requested';
+    portalDonation.status = 'awaiting_volunteer';
     await portalDonation.save();
     
     // Update fulfilled quantities on the DonationRequest
@@ -501,6 +623,33 @@ export const requestPickup = async (req, res) => {
       }
     }
     
+    // START FCM: Notify Donor and Broadcast to Volunteers
+    // NOTE: FCM is now sent automatically via Notification model post-save hook
+    try {
+        // 1. Notify Donor
+        await Notification.create({
+            title: 'Pickup Requested',
+            body: 'Your pickup request has been received. A volunteer will be assigned shortly.',
+            recipientId: userId,
+            type: 'system_notification',
+            data: { taskId: task._id.toString() },
+        });
+
+        // 2. Broadcast to Volunteers (New Pickup Task Available)
+        await Notification.create({
+            title: 'New Pickup Task Available',
+            body: `Pickup from ${pickupAddress?.addressLine2 || 'Unknown Location'}`,
+            recipientId: null, // null = broadcast
+            targetUserType: 'volunteer',
+            type: 'task_open_broadcast',
+            data: { taskId: task._id.toString() },
+        });
+
+    } catch (e) {
+        console.error('[requestPickup] Failed to create notifications:', e);
+    }
+    // END FCM
+
     return res.status(200).json({
       success: true,
       message: 'Pickup requested! A volunteer will contact you soon.',
@@ -520,7 +669,7 @@ export const requestPickup = async (req, res) => {
 };
 
 /**
- * Cancel a donation (only if not completed)
+ * Cancel a donation (only if not completed or pickup_scheduled)
  */
 export const cancelDonation = async (req, res) => {
   try {
@@ -552,11 +701,51 @@ export const cancelDonation = async (req, res) => {
       });
     }
     
+    // Can't cancel if volunteer already accepted pickup
+    if (portalDonation.status === 'pickup_scheduled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot cancel - a volunteer has already been assigned for pickup',
+      });
+    }
+    
     // Cancel linked pickup task if exists
     if (portalDonation.pickupTask) {
       await Task.findByIdAndUpdate(portalDonation.pickupTask, {
         status: 'cancelled',
       });
+    }
+    
+    // Revert fulfilled quantities on DonationRequest
+    if (portalDonation.donationRequest && portalDonation.donationType === 'item') {
+      const donationRequest = await DonationRequest.findById(portalDonation.donationRequest);
+      if (donationRequest && donationRequest.itemDetails && portalDonation.itemDetails) {
+        portalDonation.itemDetails.forEach(donatedItem => {
+          const requestItem = donationRequest.itemDetails.find(
+            ri => ri.category === donatedItem.category
+          );
+          if (requestItem) {
+            requestItem.fulfilledQuantity = Math.max(0, (requestItem.fulfilledQuantity || 0) - (donatedItem.quantity || 0));
+          }
+        });
+        
+        // Recalculate status
+        const anyFulfilled = donationRequest.itemDetails.some(
+          item => (item.fulfilledQuantity || 0) > 0
+        );
+        donationRequest.status = anyFulfilled ? 'partially_fulfilled' : 'accepted';
+        await donationRequest.save();
+      }
+    }
+    
+    // Revert cash donation
+    if (portalDonation.donationRequest && portalDonation.donationType === 'cash' && portalDonation.amount) {
+      const donationRequest = await DonationRequest.findById(portalDonation.donationRequest);
+      if (donationRequest) {
+        donationRequest.fulfilledAmount = Math.max(0, (donationRequest.fulfilledAmount || 0) - portalDonation.amount);
+        donationRequest.status = donationRequest.fulfilledAmount > 0 ? 'partially_fulfilled' : 'accepted';
+        await donationRequest.save();
+      }
     }
     
     portalDonation.status = 'cancelled';

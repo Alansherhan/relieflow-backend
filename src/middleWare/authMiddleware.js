@@ -1,5 +1,31 @@
 import jwt from 'jsonwebtoken';
 
+/**
+ * Optional authentication - attempts to decode token if present.
+ * Does NOT fail on missing/invalid token - just continues without req.user.
+ * Use for endpoints that work publicly but can enrich response for authenticated users.
+ */
+export const optionalProtect = () => {
+  return (req, res, next) => {
+    const authHeader = req.header('Authorization');
+    if (!authHeader) {
+      return next(); // No token, continue as guest
+    }
+
+    try {
+      const token = authHeader.split(' ')[1];
+      if (token) {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = payload;
+      }
+    } catch (err) {
+      // Invalid token, continue as guest (don't fail)
+      console.log('[optionalProtect] Invalid token, continuing as guest');
+    }
+    next();
+  };
+};
+
 export const protect = (roles = []) => {
   return (req, res, next) => {
     console.log('=== PROTECT MIDDLEWARE ===');
