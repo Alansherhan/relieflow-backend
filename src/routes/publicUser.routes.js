@@ -25,7 +25,7 @@ import {
 import { getAllReliefCenters } from '../controllers/reliefCenterController.js';
 import { protect } from '../middleWare/authMiddleware.js';
 import { validate } from '../middleWare/validate.js';
-import { signupSchema, loginSchema } from '../validator/auth.js';
+import { signupSchema, loginSchema } from '../validator/shared/auth.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
