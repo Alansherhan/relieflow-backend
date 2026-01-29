@@ -24,6 +24,8 @@ import {
 } from '../controllers/aidRequestController.js';
 import { getAllReliefCenters } from '../controllers/reliefCenterController.js';
 import { protect } from '../middleWare/authMiddleware.js';
+import { validate } from '../middleWare/validate.js';
+import { signupSchema, loginSchema } from '../validator/auth.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
@@ -31,8 +33,8 @@ import { registerFcmToken, unregisterFcmToken } from '../controllers/fcmControll
 import { getMyTasks, updateTaskStatus, completeTaskWithProof, getOpenTasks, claimTask } from '../controllers/taskController.js';
 
 export function publicUserRoutes(router) {
-  router.post('/signup', signUp);
-  router.post('/login', login);
+  router.post('/signup', validate(signupSchema), signUp);
+  router.post('/login', validate(loginSchema), login);
   router.get('/profile', protect(['public', 'volunteer']), getUserProfile);
   router.put(
     '/update',
