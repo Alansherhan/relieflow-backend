@@ -275,9 +275,9 @@ export const changePassword = async (req, res) => {
     const userId = req.user.id || req.user._id; // from your auth middleware
 
     if (!oldPassword || !newPassword) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Old password and new password are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Old password and new password are required'
       });
     }
 
@@ -285,9 +285,9 @@ export const changePassword = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
 
@@ -295,9 +295,9 @@ export const changePassword = async (req, res) => {
     const isMatch = await bcrypt.compare(oldPassword, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Incorrect current password' 
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect current password'
       });
     }
 
@@ -305,15 +305,108 @@ export const changePassword = async (req, res) => {
     user.password = newPassword;
     await user.save();
 
-    res.json({ 
-      success: true, 
-      message: 'Password updated successfully' 
+    res.json({
+      success: true,
+      message: 'Password updated successfully'
     });
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update password' 
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update password'
+    });
+  }
+};
+
+// Generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // For security, always return success even if user doesn't exist
+    if (!user) {
+      console.log(`[FORGOT PASSWORD] No user found with email: ${email}`);
+      return res.status(200).json({
+        success: true,
+        message: 'If the email exists, an OTP has been sent.',
+      });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+
+    // Set OTP expiry to 10 minutes from now
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Save OTP to user document
+    user.passwordResetOtp = otp;
+    user.passwordResetOtpExpires = otpExpiry;
+    await user.save({ validateBeforeSave: false });
+
+    // Log OTP to console (for development/testing)
+    console.log('='.repeat(50));
+    console.log('[FORGOT PASSWORD] OTP Generated');
+    console.log(`Email: ${email}`);
+    console.log(`OTP: ${otp}`);
+    console.log(`Expires at: ${otpExpiry.toLocaleString()}`);
+    console.log('='.repeat(50));
+
+    return res.status(200).json({
+      success: true,
+      message: 'If the email exists, an OTP has been sent.',
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process forgot password request',
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      passwordResetOtp: otp,
+      passwordResetOtpExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP',
+      });
+    }
+
+    // Update password (pre-save hook will hash it)
+    user.password = newPassword;
+
+    // Clear OTP fields
+    user.passwordResetOtp = null;
+    user.passwordResetOtpExpires = null;
+
+    await user.save();
+
+    console.log(`[RESET PASSWORD] Password reset successful for: ${email}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
     });
   }
 };

@@ -5,6 +5,8 @@ import {
   updateProfile,
   getUserProfile,
   changePassword,
+  forgotPassword,
+  resetPassword,
 } from '../controllers/userProfileController.js';
 import { getAllCalamityTypes } from '../controllers/calamityTypeController.js';
 import {
@@ -26,6 +28,7 @@ import { getAllReliefCenters } from '../controllers/reliefCenterController.js';
 import { protect } from '../middleWare/authMiddleware.js';
 import { validate } from '../middleWare/validate.js';
 import { signupSchema, loginSchema } from '../validator/shared/auth.js';
+import { forgotPasswordSchema, resetPasswordSchema } from '../validator/shared/passwordReset.js';
 import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
@@ -36,6 +39,8 @@ import { donationSchema } from '../validator/request/donation.js';
 export function publicUserRoutes(router) {
   router.post('/signup', validate(signupSchema), signUp);
   router.post('/login', validate(loginSchema), login);
+  router.post('/forgot-password', validate(forgotPasswordSchema), forgotPassword);
+  router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
   router.get('/profile', protect(['public', 'volunteer']), getUserProfile);
   router.put(
     '/update',
