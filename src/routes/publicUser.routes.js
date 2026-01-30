@@ -31,7 +31,7 @@ import upload from '../middleWare/upload.js';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
 import { registerFcmToken, unregisterFcmToken } from '../controllers/fcmController.js';
 import { getMyTasks, updateTaskStatus, completeTaskWithProof, getOpenTasks, claimTask } from '../controllers/taskController.js';
-import { aidSchema } from '../validator/aidRequest/aid.js';
+import { aidSchema } from '../validator/request/aid.js';
 import { donationSchema } from '../validator/request/donation.js';
 export function publicUserRoutes(router) {
   router.post('/signup', validate(signupSchema), signUp);
