@@ -1,7 +1,7 @@
-import TaskSchema from "../models/Task.js";
-import AidRequest from "../models/AidRequest.js";
-import Notification from "../models/Notification.js";
-import PortalDonation from "../models/PortalDonation.js";
+import TaskSchema from '../models/Task.js';
+import AidRequest from '../models/AidRequest.js';
+import Notification from '../models/Notification.js';
+import PortalDonation from '../models/PortalDonation.js';
 // FCM is now sent automatically via Notification model post-save hook
 
 export const assignTask = async (req, res) => {
@@ -15,23 +15,22 @@ export const assignTask = async (req, res) => {
     const taskAssigned = await TaskSchema.create({
       taskName: taskName,
       taskType: taskType,
-      status: assignedVolunteers.length > 0 ? "assigned" : "open",
-      priority: "low",
+      status: assignedVolunteers.length > 0 ? 'assigned' : 'open',
+      priority: 'low',
       volunteersNeeded: volunteersNeeded,
       assignedVolunteers: assignedVolunteers,
-      donationRequest: donationRequest
+      donationRequest: donationRequest,
     });
 
     return res.status(201).json({
       success: true,
-      message: taskAssigned
+      message: taskAssigned,
     });
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
     return res.status(400).json({
       success: false,
-      message: "Error"
+      message: 'Error',
     });
   }
 };
@@ -39,12 +38,12 @@ export const assignTask = async (req, res) => {
 export const getAllTasks = async (req, res) => {
   try {
     const allTasks = await TaskSchema.find()
-      .populate("assignedVolunteers")
+      .populate('assignedVolunteers')
       .sort({ _id: -1 });
     console.log(allTasks);
     return res.status(200).json({
       success: true,
-      message: allTasks
+      message: allTasks,
     });
   } catch (error) {
     console.log(error);
@@ -78,8 +77,7 @@ export const deleteTask = async (req, res) => {
       success: true,
       message: 'Deleted Sucessfully',
     });
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
@@ -99,7 +97,12 @@ export const getMyTasks = async (req, res) => {
 
     // Build query - check if volunteer is in assignedVolunteers array
     const query = { assignedVolunteers: volunteerId };
-    if (status && ['assigned', 'accepted', 'completed', 'rejected'].includes(status.toLowerCase())) {
+    if (
+      status &&
+      ['assigned', 'accepted', 'completed', 'rejected'].includes(
+        status.toLowerCase()
+      )
+    ) {
       query.status = status.toLowerCase();
     }
 
@@ -108,28 +111,28 @@ export const getMyTasks = async (req, res) => {
         path: 'aidRequest',
         populate: {
           path: 'aidRequestedBy',
-          model: 'userProfile'
-        }
+          model: 'userProfile',
+        },
       })
       .populate({
         path: 'donationRequest',
         populate: {
           path: 'requestedBy',
-          model: 'userProfile'
-        }
+          model: 'userProfile',
+        },
       })
       .populate('assignedVolunteers') // Keep this one simple or populate if needed
       .sort({ _id: -1 }); // Newest first
 
     return res.status(200).json({
       success: true,
-      data: tasks
+      data: tasks,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
-      message: 'Error fetching tasks'
+      message: 'Error fetching tasks',
     });
   }
 };
@@ -146,7 +149,7 @@ export const updateTaskStatus = async (req, res) => {
     if (!status || !validStatuses.includes(status.toLowerCase())) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid status. Must be: accepted, rejected, or completed'
+        message: 'Invalid status. Must be: accepted, rejected, or completed',
       });
     }
 
@@ -155,16 +158,18 @@ export const updateTaskStatus = async (req, res) => {
     if (!task) {
       return res.status(404).json({
         success: false,
-        message: 'Task not found'
+        message: 'Task not found',
       });
     }
 
     // Check if volunteer is in assignedVolunteers array
-    const isAssigned = task.assignedVolunteers.some(v => v.toString() === volunteerId.toString());
+    const isAssigned = task.assignedVolunteers.some(
+      (v) => v.toString() === volunteerId.toString()
+    );
     if (!isAssigned) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to update this task'
+        message: 'Not authorized to update this task',
       });
     }
 
@@ -176,7 +181,7 @@ export const updateTaskStatus = async (req, res) => {
 
     // Send notifications based on new status
     const normalizedStatus = status.toLowerCase();
-    
+
     if (normalizedStatus === 'accepted') {
       // Notify volunteer of successful acceptance
       try {
@@ -187,31 +192,62 @@ export const updateTaskStatus = async (req, res) => {
           type: 'task_assigned',
           data: { taskId: task._id.toString() },
         });
-        console.log(`[updateTaskStatus] Notification sent to volunteer ${volunteerId}`);
+        console.log(
+          `[updateTaskStatus] Notification sent to volunteer ${volunteerId}`
+        );
       } catch (notifErr) {
-        console.error('[updateTaskStatus] Error sending volunteer notification:', notifErr);
+        console.error(
+          '[updateTaskStatus] Error sending volunteer notification:',
+          notifErr
+        );
       }
 
       // Notify public user that volunteer is working on their request
       try {
         const populatedTask = await TaskSchema.findById(id)
           .populate('aidRequest')
-          .populate('donationRequest');
-        
-        const requesterId = populatedTask.aidRequest?.aidRequestedBy || 
-                            populatedTask.donationRequest?.requestedBy;
+          .populate('donationRequest')
+          .populate(
+            'assignedVolunteers',
+            'name phoneNumber skill profileImage'
+          );
+
+        const requesterId =
+          populatedTask.aidRequest?.aidRequestedBy ||
+          populatedTask.donationRequest?.requestedBy;
+
+        // Get volunteer info for notification
+        const volunteer = populatedTask.assignedVolunteers?.find(
+          (v) => v._id.toString() === volunteerId.toString()
+        );
+
         if (requesterId) {
           await Notification.create({
             title: 'Volunteer Assigned',
-            body: 'A volunteer has accepted your request and is now working on it.',
+            body: volunteer?.name
+              ? `${volunteer.name} has accepted your request and is now working on it.`
+              : 'A volunteer has accepted your request and is now working on it.',
             recipientId: requesterId,
             type: 'aid_request_in_progress',
-            data: { taskId: task._id.toString() },
+            data: {
+              taskId: task._id.toString(),
+              volunteerName: volunteer?.name || null,
+              volunteerPhone: volunteer?.phoneNumber || null,
+              volunteerSkill: volunteer?.skill || null,
+              aidRequestId: populatedTask.aidRequest?._id?.toString() || null,
+              donationRequestId:
+                populatedTask.donationRequest?._id?.toString() || null,
+            },
           });
-          console.log(`[updateTaskStatus] Notification sent to requester ${requesterId}`);
+          console.log(
+            `[updateTaskStatus] Notification sent to requester ${requesterId}`
+          );
         }
       } catch (notifErr) {
-        console.error('[updateTaskStatus] Error sending requester notification:', notifErr);
+        console.error(
+          '[updateTaskStatus] Error sending requester notification:',
+          notifErr
+        );
       }
     } else if (normalizedStatus === 'completed') {
       // Notify volunteer of successful completion
@@ -223,9 +259,14 @@ export const updateTaskStatus = async (req, res) => {
           type: 'task_assigned',
           data: { taskId: task._id.toString() },
         });
-        console.log(`[updateTaskStatus] Completion notification sent to volunteer ${volunteerId}`);
+        console.log(
+          `[updateTaskStatus] Completion notification sent to volunteer ${volunteerId}`
+        );
       } catch (notifErr) {
-        console.error('[updateTaskStatus] Error sending volunteer completion notification:', notifErr);
+        console.error(
+          '[updateTaskStatus] Error sending volunteer completion notification:',
+          notifErr
+        );
       }
 
       // Notify public user that request is complete
@@ -233,11 +274,15 @@ export const updateTaskStatus = async (req, res) => {
         const populatedTask = await TaskSchema.findById(id)
           .populate('aidRequest')
           .populate('donationRequest');
-        
-        const requesterId = populatedTask.aidRequest?.aidRequestedBy || 
-                            populatedTask.donationRequest?.requestedBy;
+
+        const requesterId =
+          populatedTask.aidRequest?.aidRequestedBy ||
+          populatedTask.donationRequest?.requestedBy;
         if (requesterId) {
-          const requestType = task.taskType === 'aid' ? 'aid_request_completed' : 'donation_request_completed';
+          const requestType =
+            task.taskType === 'aid'
+              ? 'aid_request_completed'
+              : 'donation_request_completed';
           await Notification.create({
             title: 'Request Completed',
             body: 'Great news! Your request has been successfully completed.',
@@ -245,23 +290,28 @@ export const updateTaskStatus = async (req, res) => {
             type: requestType,
             data: { taskId: task._id.toString() },
           });
-          console.log(`[updateTaskStatus] Completion notification sent to requester ${requesterId}`);
+          console.log(
+            `[updateTaskStatus] Completion notification sent to requester ${requesterId}`
+          );
         }
       } catch (notifErr) {
-        console.error('[updateTaskStatus] Error sending requester completion notification:', notifErr);
+        console.error(
+          '[updateTaskStatus] Error sending requester completion notification:',
+          notifErr
+        );
       }
     }
 
     return res.status(200).json({
       success: true,
       message: 'Task status updated',
-      data: task
+      data: task,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
-      message: 'Error updating task status'
+      message: 'Error updating task status',
     });
   }
 };
@@ -280,7 +330,7 @@ export const completeTaskWithProof = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'Proof image is required to complete the task'
+        message: 'Proof image is required to complete the task',
       });
     }
 
@@ -289,16 +339,18 @@ export const completeTaskWithProof = async (req, res) => {
     if (!task) {
       return res.status(404).json({
         success: false,
-        message: 'Task not found'
+        message: 'Task not found',
       });
     }
 
     // Check if volunteer is in assignedVolunteers array
-    const isAssigned = task.assignedVolunteers.some(v => v.toString() === volunteerId.toString());
+    const isAssigned = task.assignedVolunteers.some(
+      (v) => v.toString() === volunteerId.toString()
+    );
     if (!isAssigned) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to complete this task'
+        message: 'Not authorized to complete this task',
       });
     }
 
@@ -306,7 +358,7 @@ export const completeTaskWithProof = async (req, res) => {
     if (task.status !== 'accepted') {
       return res.status(400).json({
         success: false,
-        message: 'Can only complete tasks that are in accepted status'
+        message: 'Can only complete tasks that are in accepted status',
       });
     }
 
@@ -319,7 +371,9 @@ export const completeTaskWithProof = async (req, res) => {
     task.completedAt = new Date();
     await task.save();
 
-    console.log(`[completeTaskWithProof] Task ${id} completed with proof: ${proofImageUrl}`);
+    console.log(
+      `[completeTaskWithProof] Task ${id} completed with proof: ${proofImageUrl}`
+    );
 
     // Send completion notifications
     // 1. Notify the volunteer
@@ -331,9 +385,14 @@ export const completeTaskWithProof = async (req, res) => {
         type: 'task_assigned',
         data: { taskId: task._id.toString() },
       });
-      console.log(`[completeTaskWithProof] Completion notification sent to volunteer ${volunteerId}`);
+      console.log(
+        `[completeTaskWithProof] Completion notification sent to volunteer ${volunteerId}`
+      );
     } catch (notifErr) {
-      console.error('[completeTaskWithProof] Error sending volunteer completion notification:', notifErr);
+      console.error(
+        '[completeTaskWithProof] Error sending volunteer completion notification:',
+        notifErr
+      );
     }
 
     // 2. Notify the public user
@@ -341,11 +400,15 @@ export const completeTaskWithProof = async (req, res) => {
       const populatedTask = await TaskSchema.findById(id)
         .populate('aidRequest')
         .populate('donationRequest');
-      
-      const requesterId = populatedTask.aidRequest?.aidRequestedBy || 
-                          populatedTask.donationRequest?.requestedBy;
+
+      const requesterId =
+        populatedTask.aidRequest?.aidRequestedBy ||
+        populatedTask.donationRequest?.requestedBy;
       if (requesterId) {
-        const requestType = task.taskType === 'aid' ? 'aid_request_completed' : 'donation_request_completed';
+        const requestType =
+          task.taskType === 'aid'
+            ? 'aid_request_completed'
+            : 'donation_request_completed';
         await Notification.create({
           title: 'Request Completed',
           body: 'Great news! Your request has been successfully completed.',
@@ -353,35 +416,47 @@ export const completeTaskWithProof = async (req, res) => {
           type: requestType,
           data: { taskId: task._id.toString() },
         });
-      console.log(`[completeTaskWithProof] Completion notification sent to requester ${requesterId}`);
+        console.log(
+          `[completeTaskWithProof] Completion notification sent to requester ${requesterId}`
+        );
       }
     } catch (notifErr) {
-      console.error('[completeTaskWithProof] Error sending requester completion notification:', notifErr);
+      console.error(
+        '[completeTaskWithProof] Error sending requester completion notification:',
+        notifErr
+      );
     }
-    
+
     // Sync PortalDonation status for pickup tasks
     // When volunteer completes a pickup task, update linked PortalDonation to completed
     try {
-        const portalDonation = await PortalDonation.findOne({ pickupTask: task._id });
-        if (portalDonation && portalDonation.status === 'pickup_scheduled') {
-            portalDonation.status = 'completed';
-            await portalDonation.save();
-            console.log(`[completeTaskWithProof] PortalDonation ${portalDonation._id} updated to completed`);
-        }
+      const portalDonation = await PortalDonation.findOne({
+        pickupTask: task._id,
+      });
+      if (portalDonation && portalDonation.status === 'pickup_scheduled') {
+        portalDonation.status = 'completed';
+        await portalDonation.save();
+        console.log(
+          `[completeTaskWithProof] PortalDonation ${portalDonation._id} updated to completed`
+        );
+      }
     } catch (error) {
-        console.error('[completeTaskWithProof] Error syncing PortalDonation status:', error);
+      console.error(
+        '[completeTaskWithProof] Error syncing PortalDonation status:',
+        error
+      );
     }
 
     return res.status(200).json({
       success: true,
       message: 'Task completed successfully',
-      data: task
+      data: task,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
-      message: 'Error completing task'
+      message: 'Error completing task',
     });
   }
 };
@@ -395,90 +470,98 @@ export const getOpenTasks = async (req, res) => {
     // Find tasks that are open AND have available slots
     // Use aggregation to filter by volunteer count < volunteersNeeded
     let tasks;
-    
+
     if (lng && lat) {
       tasks = await TaskSchema.aggregate([
         {
           $match: {
-            status: { $in: ['open', 'accepted'] }
-          }
+            status: { $in: ['open', 'accepted'] },
+          },
         },
         {
           $addFields: {
             currentVolunteerCount: { $size: '$assignedVolunteers' },
             hasOpenSlots: {
-              $lt: [{ $size: '$assignedVolunteers' }, '$volunteersNeeded']
-            }
-          }
+              $lt: [{ $size: '$assignedVolunteers' }, '$volunteersNeeded'],
+            },
+          },
         },
         {
           $match: {
-            hasOpenSlots: true
-          }
+            hasOpenSlots: true,
+          },
         },
         {
           $geoNear: {
-            near: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
+            near: {
+              type: 'Point',
+              coordinates: [parseFloat(lng), parseFloat(lat)],
+            },
             distanceField: 'distance',
             spherical: true,
-            maxDistance: 50000 // 50km radius
-          }
-        }
+            maxDistance: 50000, // 50km radius
+          },
+        },
       ]);
     } else {
       tasks = await TaskSchema.aggregate([
         {
           $match: {
-            status: { $in: ['open', 'accepted'] }
-          }
+            status: { $in: ['open', 'accepted'] },
+          },
         },
         {
           $addFields: {
             currentVolunteerCount: { $size: '$assignedVolunteers' },
             remainingSlots: {
-              $subtract: ['$volunteersNeeded', { $size: '$assignedVolunteers' }]
-            }
-          }
+              $subtract: [
+                '$volunteersNeeded',
+                { $size: '$assignedVolunteers' },
+              ],
+            },
+          },
         },
         {
           $match: {
-            $expr: { $lt: [{ $size: '$assignedVolunteers' }, '$volunteersNeeded'] }
-          }
+            $expr: {
+              $lt: [{ $size: '$assignedVolunteers' }, '$volunteersNeeded'],
+            },
+          },
         },
         {
-          $sort: { _id: -1 }
-        }
+          $sort: { _id: -1 },
+        },
       ]);
-      
+
       // Populate references after aggregation
       await TaskSchema.populate(tasks, [
-        { 
+        {
           path: 'aidRequest',
           populate: {
             path: 'aidRequestedBy',
-            model: 'userProfile'
-          }
+            model: 'userProfile',
+          },
         },
-        { 
+        {
           path: 'donationRequest',
           populate: {
             path: 'requestedBy',
-            model: 'userProfile'
-          }
+            model: 'userProfile',
+          },
         },
-        { path: 'assignedVolunteers' }
+        { path: 'assignedVolunteers' },
       ]);
     }
 
     return res.status(200).json({
       success: true,
-      data: tasks
+      data: tasks,
     });
   } catch (error) {
     console.error('[getOpenTasks] Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error fetching open tasks'
+      message: 'Error fetching open tasks',
     });
   }
 };
@@ -497,7 +580,7 @@ export const claimTask = async (req, res) => {
     if (!task) {
       return res.status(404).json({
         success: false,
-        message: 'Task not found'
+        message: 'Task not found',
       });
     }
 
@@ -505,16 +588,18 @@ export const claimTask = async (req, res) => {
     if (task.status !== 'open') {
       return res.status(400).json({
         success: false,
-        message: 'Task is no longer available for claiming'
+        message: 'Task is no longer available for claiming',
       });
     }
 
     // Check if volunteer is already assigned
-    const alreadyAssigned = task.assignedVolunteers.some(v => v.toString() === volunteerId.toString());
+    const alreadyAssigned = task.assignedVolunteers.some(
+      (v) => v.toString() === volunteerId.toString()
+    );
     if (alreadyAssigned) {
       return res.status(400).json({
         success: false,
-        message: 'You have already claimed this task'
+        message: 'You have already claimed this task',
       });
     }
 
@@ -522,76 +607,111 @@ export const claimTask = async (req, res) => {
     if (task.assignedVolunteers.length >= task.volunteersNeeded) {
       return res.status(400).json({
         success: false,
-        message: 'Task has no available slots'
+        message: 'Task has no available slots',
       });
     }
 
     // Add volunteer to assignedVolunteers array
     task.assignedVolunteers.push(volunteerId);
-    
+
     // DIRECTLY ACCEPT TASK (Skip 'assigned' status)
     // Even if multiple slots, if someone claims, it's considered "active/accepted"
     // Note: getOpenTasks must now include 'accepted' tasks with open slots
     task.status = 'accepted';
-    
+
     await task.save();
 
-    console.log(`[claimTask] Task ${id} claimed/accepted by volunteer ${volunteerId}`);
+    console.log(
+      `[claimTask] Task ${id} claimed/accepted by volunteer ${volunteerId}`
+    );
 
     // Create notification for the volunteer
     try {
-        await Notification.create({
-            title: 'Task Accepted',
-            body: `You are now working on: ${task.taskName}`,
-            recipientId: volunteerId,
-            type: 'task_assigned',
-            data: { taskId: task._id.toString() },
-        });
+      await Notification.create({
+        title: 'Task Accepted',
+        body: `You are now working on: ${task.taskName}`,
+        recipientId: volunteerId,
+        type: 'task_assigned',
+        data: { taskId: task._id.toString() },
+      });
     } catch (error) {
-        console.error('[claimTask] Error creating volunteer notification:', error);
+      console.error(
+        '[claimTask] Error creating volunteer notification:',
+        error
+      );
     }
 
     // Notify public user immediately
     // (Moved from updateTaskStatus since we skip the manual accept step)
     try {
-        const reqId = task.aidRequest?.aidRequestedBy || task.donationRequest?.requestedBy;
-        if (reqId) {
-            await Notification.create({
-                title: 'Volunteer Assigned',
-                body: 'A volunteer has accepted your request and is now working on it.',
-                recipientId: reqId,
-                type: 'aid_request_in_progress',
-                data: { taskId: task._id.toString() },
-            });
-            console.log(`[claimTask] Notification sent to requester ${reqId}`);
-        }
+      // Fetch volunteer info for the notification
+      const User = (await import('../models/userProfile.js')).default;
+      const volunteer = await User.findById(volunteerId).select(
+        'name phoneNumber skill'
+      );
+
+      // Re-fetch task with populated donationRequest if needed
+      const populatedTask = await TaskSchema.findById(id)
+        .populate('aidRequest')
+        .populate('donationRequest');
+
+      const reqId =
+        populatedTask.aidRequest?.aidRequestedBy ||
+        populatedTask.donationRequest?.requestedBy;
+      if (reqId) {
+        await Notification.create({
+          title: 'Volunteer Assigned',
+          body: volunteer?.name
+            ? `${volunteer.name} has accepted your request and is now working on it.`
+            : 'A volunteer has accepted your request and is now working on it.',
+          recipientId: reqId,
+          type: 'aid_request_in_progress',
+          data: {
+            taskId: task._id.toString(),
+            volunteerName: volunteer?.name || null,
+            volunteerPhone: volunteer?.phoneNumber || null,
+            volunteerSkill: volunteer?.skill || null,
+            aidRequestId: populatedTask.aidRequest?._id?.toString() || null,
+            donationRequestId:
+              populatedTask.donationRequest?._id?.toString() || null,
+          },
+        });
+        console.log(`[claimTask] Notification sent to requester ${reqId}`);
+      }
     } catch (error) {
-        console.error('[claimTask] Error creating requester notification:', error);
+      console.error(
+        '[claimTask] Error creating requester notification:',
+        error
+      );
     }
-    
+
     // Sync PortalDonation status for pickup tasks
     // When volunteer claims a pickup task, update linked PortalDonation to pickup_scheduled
     try {
-        const portalDonation = await PortalDonation.findOne({ pickupTask: task._id });
-        if (portalDonation && portalDonation.status === 'awaiting_volunteer') {
-            portalDonation.status = 'pickup_scheduled';
-            await portalDonation.save();
-            console.log(`[claimTask] PortalDonation ${portalDonation._id} updated to pickup_scheduled`);
-        }
+      const portalDonation = await PortalDonation.findOne({
+        pickupTask: task._id,
+      });
+      if (portalDonation && portalDonation.status === 'awaiting_volunteer') {
+        portalDonation.status = 'pickup_scheduled';
+        await portalDonation.save();
+        console.log(
+          `[claimTask] PortalDonation ${portalDonation._id} updated to pickup_scheduled`
+        );
+      }
     } catch (error) {
-        console.error('[claimTask] Error syncing PortalDonation status:', error);
+      console.error('[claimTask] Error syncing PortalDonation status:', error);
     }
 
     return res.status(200).json({
       success: true,
       message: 'Task claimed and accepted successfully',
-      data: task
+      data: task,
     });
   } catch (error) {
     console.error('[claimTask] Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error claiming task'
+      message: 'Error claiming task',
     });
   }
 };
@@ -600,12 +720,12 @@ export const claimTask = async (req, res) => {
 export const createTaskFromAidRequest = async (req, res) => {
   try {
     const { aidRequestId } = req.params;
-    const { 
-      taskName, 
-      volunteersNeeded = 1, 
+    const {
+      taskName,
+      volunteersNeeded = 1,
       assignedVolunteers = [],
       isOpen = false,
-      priority = 'medium'
+      priority = 'medium',
     } = req.body;
 
     console.log('[createTaskFromAidRequest] Aid Request ID:', aidRequestId);
@@ -615,7 +735,7 @@ export const createTaskFromAidRequest = async (req, res) => {
     if (!aidRequest) {
       return res.status(404).json({
         success: false,
-        message: 'Aid request not found'
+        message: 'Aid request not found',
       });
     }
 
@@ -624,7 +744,7 @@ export const createTaskFromAidRequest = async (req, res) => {
     if (existingTask) {
       return res.status(400).json({
         success: false,
-        message: 'A task already exists for this aid request'
+        message: 'A task already exists for this aid request',
       });
     }
 
@@ -632,19 +752,23 @@ export const createTaskFromAidRequest = async (req, res) => {
     const taskData = {
       taskName: taskName || aidRequest.name || `Aid Request Task`,
       taskType: 'aid',
-      status: isOpen ? 'open' : (assignedVolunteers.length > 0 ? 'assigned' : 'open'),
+      status: isOpen
+        ? 'open'
+        : assignedVolunteers.length > 0
+          ? 'assigned'
+          : 'open',
       priority: priority || aidRequest.priority,
       volunteersNeeded: volunteersNeeded,
       assignedVolunteers: isOpen ? [] : assignedVolunteers,
       aidRequest: aidRequestId,
       imageUrl: aidRequest.imageUrl,
     };
-    
+
     // Only add location if it has valid coordinates
     if (aidRequest.location?.coordinates?.length === 2) {
       taskData.location = aidRequest.location;
     }
-    
+
     const task = await TaskSchema.create(taskData);
 
     // Check if it was already accepted to avoid duplicate notifications
@@ -659,30 +783,38 @@ export const createTaskFromAidRequest = async (req, res) => {
     // Notify Aid Requester if they are a registered user AND it wasn't already accepted
     // NOTE: FCM is now sent automatically via Notification model post-save hook
     if (aidRequest.aidRequestedBy && !isAlreadyAccepted) {
-        try {
-            await Notification.create({
-                title: 'Aid Request Accepted',
-                body: `Your request "${aidRequest.calamityType}" is being processed. A task has been created.`,
-                recipientId: aidRequest.aidRequestedBy,
-                type: 'aid_request_accepted',
-                data: { aidRequestId: aidRequest._id.toString(), taskId: task._id.toString() },
-            });
-            console.log(`[createTaskFromAidRequest] Created notification for user ${aidRequest.aidRequestedBy}`);
-        } catch (error) {
-            console.error('[createTaskFromAidRequest] Failed to create notification:', error);
-        }
+      try {
+        await Notification.create({
+          title: 'Aid Request Accepted',
+          body: `Your request "${aidRequest.calamityType}" is being processed. A task has been created.`,
+          recipientId: aidRequest.aidRequestedBy,
+          type: 'aid_request_accepted',
+          data: {
+            aidRequestId: aidRequest._id.toString(),
+            taskId: task._id.toString(),
+          },
+        });
+        console.log(
+          `[createTaskFromAidRequest] Created notification for user ${aidRequest.aidRequestedBy}`
+        );
+      } catch (error) {
+        console.error(
+          '[createTaskFromAidRequest] Failed to create notification:',
+          error
+        );
+      }
     }
 
     return res.status(201).json({
       success: true,
       message: 'Task created successfully',
-      data: task
+      data: task,
     });
   } catch (error) {
     console.error('[createTaskFromAidRequest] Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error creating task from aid request'
+      message: 'Error creating task from aid request',
     });
   }
 };
@@ -699,7 +831,7 @@ export const searchVolunteers = async (req, res) => {
     if (query) {
       filter.$or = [
         { name: { $regex: query, $options: 'i' } },
-        { email: { $regex: query, $options: 'i' } }
+        { email: { $regex: query, $options: 'i' } },
       ];
     }
 
@@ -714,13 +846,13 @@ export const searchVolunteers = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: volunteers
+      data: volunteers,
     });
   } catch (error) {
     console.error('[searchVolunteers] Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error searching volunteers'
+      message: 'Error searching volunteers',
     });
   }
 };

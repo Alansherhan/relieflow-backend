@@ -102,8 +102,15 @@ export const addAidRequest = async (req, res) => {
 
 export const getAllAidRequests = async (req, res) => {
   try {
-    const aidRequest = await AidRequest.find().sort({ _id: -1 }).lean();
-    console.log(aidRequest);
+    // Use lean({ virtuals: true }) to include formattedAddress and name virtuals
+    const aidRequest = await AidRequest.find()
+      .populate('calamityType')
+      .sort({ _id: -1 })
+      .lean({ virtuals: true });
+
+    console.log('=== getAllAidRequests DEBUG ===');
+    console.log(`Found ${aidRequest.length} aid requests`);
+
     return res.status(200).json({
       success: true,
       message: aidRequest,
@@ -155,10 +162,36 @@ export const getMyAidRequests = async (req, res) => {
     // Note: JWT payload has 'id' not '_id'
     const userId = req.user._id || req.user.id;
 
+    // IMPORTANT: Using lean({ virtuals: true }) to include virtuals like
+    // 'formattedAddress' and 'name' which are defined in the schema
     const aidRequests = await AidRequest.find({ aidRequestedBy: userId })
       .populate('calamityType')
       .sort({ createdAt: -1 })
-      .lean();
+      .lean({ virtuals: true });
+
+    // Debug logging to verify data consistency
+    console.log('=== getMyAidRequests DEBUG ===');
+    console.log(`User ID: ${userId}`);
+    console.log(`Found ${aidRequests.length} aid requests`);
+    if (aidRequests.length > 0) {
+      const first = aidRequests[0];
+      console.log('First request sample:', {
+        _id: first._id,
+        status: first.status,
+        priority: first.priority,
+        description: first.description ? 'present' : 'missing',
+        imageUrl: first.imageUrl ? 'present' : 'missing',
+        address: first.address ? 'present' : 'missing',
+        formattedAddress: first.formattedAddress ? 'present' : 'missing',
+        name: first.name ? 'present' : 'missing',
+        calamityType: first.calamityType
+          ? {
+              _id: first.calamityType._id,
+              calamityName: first.calamityType.calamityName,
+            }
+          : 'missing',
+      });
+    }
 
     return res.status(200).json({
       success: true,

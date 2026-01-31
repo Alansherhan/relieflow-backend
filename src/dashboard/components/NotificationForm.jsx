@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Label, Input, TextArea, Select, FormGroup, FormMessage, Button, Icon } from '@adminjs/design-system';
 import { ApiClient, useRecord } from 'adminjs';
 
@@ -57,15 +57,27 @@ const NotificationForm = (props) => {
         loadUsers();
     }, []);
 
-    // Initialize default values
+    // Track if we've initialized defaults
+    const initializedRef = useRef(false);
+
+    // Initialize default values - ensure state is set before first render cycle completes
     useEffect(() => {
-        if (!record.params.type) {
-            handleChange({ params: { ...record.params, type: 'admin_broadcast' } });
+        if (initializedRef.current) return;
+        
+        const needsTypeDefault = !record.params.type;
+        const needsTargetDefault = !record.params.targetUserType;
+        
+        if (needsTypeDefault || needsTargetDefault) {
+            handleChange({ 
+                params: { 
+                    ...record.params, 
+                    type: record.params.type || 'admin_broadcast',
+                    targetUserType: record.params.targetUserType || 'all'
+                } 
+            });
         }
-        if (!record.params.targetUserType) {
-            handleChange({ params: { ...record.params, targetUserType: 'all' } });
-        }
-    }, []);
+        initializedRef.current = true;
+    }, [record.params, handleChange]);
 
     // Handle delivery mode change
     const handleDeliveryModeChange = (mode) => {
@@ -291,9 +303,10 @@ const NotificationForm = (props) => {
                         Notification Type <span style={styles.required}>*</span>
                     </label>
                     <Select
-                        value={notificationTypes.find(t => t.value === record.params.type) || notificationTypes[0]}
+                        value={notificationTypes.find(t => t.value === record.params.type) || null}
                         options={notificationTypes}
-                        onChange={(selected) => handleChange({ params: { ...record.params, type: selected.value } })}
+                        onChange={(selected) => handleChange({ params: { ...record.params, type: selected?.value } })}
+                        placeholder="Select notification type..."
                     />
                     {errors.type && <FormMessage>{errors.type}</FormMessage>}
                 </FormGroup>
@@ -334,9 +347,10 @@ const NotificationForm = (props) => {
                         <FormGroup>
                             <label style={styles.label}>Select Audience</label>
                             <Select
-                                value={audienceOptions.find(a => a.value === record.params.targetUserType) || audienceOptions[0]}
+                                value={audienceOptions.find(a => a.value === record.params.targetUserType) || null}
                                 options={audienceOptions}
-                                onChange={(selected) => handleChange({ params: { ...record.params, targetUserType: selected.value, recipientId: null } })}
+                                onChange={(selected) => handleChange({ params: { ...record.params, targetUserType: selected?.value, recipientId: null } })}
+                                placeholder="Select audience..."
                             />
                             <p style={styles.hint}>
                                 ℹ️ This notification will be sent to all users in the selected audience.
