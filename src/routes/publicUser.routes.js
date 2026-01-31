@@ -49,6 +49,7 @@ import {
   completeTaskWithProof,
   getOpenTasks,
   claimTask,
+  getTaskById,
 } from '../controllers/taskController.js';
 import { aidSchema } from '../validator/request/aid.js';
 import { donationSchema } from '../validator/request/donation.js';

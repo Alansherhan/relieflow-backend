@@ -2,7 +2,7 @@ import { components } from 'react-select';
 import adminUser from '../models/adminUser.js';
 import AidRequest from '../models/AidRequest.js';
 import CalamityType from '../models/CalamityType.js';
-import Donation from '../models/Donation.js';
+// import Donation from '../models/Donation.js';
 import DonationRequest from '../models/DonationRequest.js';
 import ReliefCenter from '../models/ReliefCenter.js';
 import Task from '../models/Task.js';
@@ -19,11 +19,21 @@ import AdminWallet from '../models/AdminWallet.js';
 export const AdminResource = {
   resource: adminUser,
   options: {
+    navigation: {
+      name: 'User Management',
+      icon: 'User',
+    },
     properties: {
       password: { isVisible: false },
       _id: { isVisible: false },
     },
-    // or you can provide an object with your custom resource options
+    translations: {
+      en: {
+        labels: {
+          Admin: 'Admin Staff',
+        },
+      },
+    },
     sort: {
       sortBy: 'createdAt',
       direction: 'desc',
@@ -89,6 +99,10 @@ const parseAidRequestPayload = (payload) => {
 export const AidRequestResource = {
   resource: AidRequest,
   options: {
+    navigation: {
+      name: 'Aid Operations',
+      icon: 'Compass',
+    },
     properties: {
       _id: {
         isVisible: false,
@@ -514,42 +528,17 @@ export const AidRequestResource = {
 export const CalamityTypeResource = {
   resource: CalamityType,
   options: {
+    navigation: {
+      name: 'System Configuration',
+      icon: 'Settings',
+    },
     properties: {
       _id: { isVisible: false },
-    },
-    sort: {
-      sortBy: 'createdAt',
-      direction: 'desc',
-    },
-  },
-};
-
-export const DonationResource = {
-  resource: Donation,
-  options: {
-    properties: {
-      _id: { isVisible: false },
-      amount: {
-        isVisible: {
-          list: false, // hide in list
-          filter: true, // allow filtering
-          show: true, // visible in details
-          edit: true, // editable in form
-        },
-      },
-      itemDetails: {
-        isVisible: {
-          list: false, // hide in list
-          filter: true, // allow filtering
-          show: true, // visible in details
-          edit: true, // editable in form
-        },
-      },
     },
     translations: {
       en: {
         labels: {
-          DonationSchema: 'Donations', // Resource name override
+          CalamityType: 'Calamity Types',
         },
       },
     },
@@ -560,9 +549,53 @@ export const DonationResource = {
   },
 };
 
+// export const DonationResource = {
+//   resource: Donation,
+//   options: {
+//     navigation: {
+//       name: 'Donations',
+//       icon: 'Money',
+//     },
+//     properties: {
+//       _id: { isVisible: false },
+//       amount: {
+//         isVisible: {
+//           list: false, // hide in list
+//           filter: true, // allow filtering
+//           show: true, // visible in details
+//           edit: true, // editable in form
+//         },
+//       },
+//       itemDetails: {
+//         isVisible: {
+//           list: false, // hide in list
+//           filter: true, // allow filtering
+//           show: true, // visible in details
+//           edit: true, // editable in form
+//         },
+//       },
+//     },
+//     translations: {
+//       en: {
+//         labels: {
+//           DonationSchema: 'Donations', // Resource name override
+//         },
+//       },
+//     },
+//     sort: {
+//       sortBy: 'createdAt',
+//       direction: 'desc',
+//     },
+//   },
+// };
+
 export const DonationRequestResource = {
   resource: DonationRequest,
   options: {
+    navigation: {
+      name: 'Donations',
+      icon: 'Money',
+    },
     properties: {
       _id: { isVisible: false },
       amount: {
@@ -819,6 +852,10 @@ export const DonationRequestResource = {
 export const ReliefCenterResource = {
   resource: ReliefCenter,
   options: {
+    navigation: {
+      name: 'Aid Operations',
+      icon: 'Compass',
+    },
     properties: {
       _id: { isVisible: false },
       formattedAddress: {
@@ -868,6 +905,10 @@ export const ReliefCenterResource = {
 export const TaskResource = {
   resource: Task,
   options: {
+    navigation: {
+      name: 'Aid Operations',
+      icon: 'Compass',
+    },
     properties: {
       _id: { isVisible: false },
       volunteersNeeded: {
@@ -911,6 +952,10 @@ export const TaskResource = {
 export const UserProfileResource = {
   resource: userProfile,
   options: {
+    navigation: {
+      name: 'User Management',
+      icon: 'User',
+    },
     properties: {
       _id: { isVisible: false },
       password: { isVisible: false },
@@ -967,13 +1012,17 @@ export const UserProfileResource = {
 export const QuizQuestionResource = {
   resource: quiz,
   options: {
+    navigation: {
+      name: 'Content Management',
+      icon: 'Document',
+    },
     properties: {
       _id: { isVisible: false },
     },
     translations: {
       en: {
         labels: {
-          QuizSchema: 'Quiz Questions', // Resource name override
+          QuizSchema: 'Quiz Questions',
         },
       },
     },
@@ -987,13 +1036,17 @@ export const QuizQuestionResource = {
 export const DisasterTipsResource = {
   resource: disasterTip,
   options: {
+    navigation: {
+      name: 'Content Management',
+      icon: 'Document',
+    },
     properties: {
       _id: { isVisible: false },
     },
     translations: {
       en: {
         labels: {
-          DisasterTipSchema: 'Disaster Tips', // Resource name override
+          DisasterTipSchema: 'Disaster Tips',
         },
       },
     },
@@ -1007,6 +1060,10 @@ export const DisasterTipsResource = {
 export const NotificationResource = {
   resource: Notification,
   options: {
+    navigation: {
+      name: 'User Management',
+      icon: 'User',
+    },
     properties: {
       _id: { isVisible: false },
 
@@ -1098,6 +1155,10 @@ export const NotificationResource = {
 export const PortalDonationResource = {
   resource: PortalDonation,
   options: {
+    navigation: {
+      name: 'Donations',
+      icon: 'Money',
+    },
     properties: {
       _id: { isVisible: false },
       donor: {
@@ -1224,6 +1285,10 @@ export const PortalDonationResource = {
 export const AdminWalletResource = {
   resource: AdminWallet,
   options: {
+    navigation: {
+      name: 'Donations',
+      icon: 'Money',
+    },
     properties: {
       _id: { isVisible: false },
       transactions: {

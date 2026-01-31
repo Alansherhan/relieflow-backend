@@ -28,7 +28,7 @@ import {
   CalamityTypeResource,
   DisasterTipsResource,
   DonationRequestResource,
-  DonationResource,
+  // DonationResource,
   QuizQuestionResource,
   ReliefCenterResource,
   TaskResource,
@@ -50,17 +50,19 @@ const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // CORS configuration for donation portal
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    process.env.PORTAL_URL, // Production portal URL
-  ].filter(Boolean),
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      process.env.PORTAL_URL, // Production portal URL
+    ].filter(Boolean),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -88,7 +90,7 @@ const adminOptions = {
     AdminResource,
     AidRequestResource,
     CalamityTypeResource,
-    DonationResource,
+    // DonationResource,
     DonationRequestResource,
     ReliefCenterResource,
     TaskResource,
@@ -244,8 +246,9 @@ app.get('/api/dashboard/stats', getDashboardStats);
 
 app.use('/', router);
 
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
-  console.log(`AdminJS available at http://localhost:3000/dashboard`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`AdminJS available at http://localhost:${PORT}/dashboard`);
 });
 // Trigger restart

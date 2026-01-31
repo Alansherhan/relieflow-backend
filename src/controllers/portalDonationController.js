@@ -260,26 +260,8 @@ export const acceptDonationRequest = async (req, res) => {
     // The fulfilledAmount is updated only when actual payment is submitted in submitCashDonation.
     // This allows multiple users to make partial contributions and prevents double-counting.
 
-    // Notify the user who requested the donation
-    if (donationRequest.requestedBy) {
-      try {
-        await Notification.create({
-          title: 'Donation Incoming!',
-          body: `${donorName} has offered to donate ${actualDonationType === 'cash' ? `₹${amount}` : 'items'} for: ${donationRequest.title}`,
-          recipientId: donationRequest.requestedBy,
-          type: 'donation_request_accepted',
-          data: {
-            donationRequestId: donationRequest._id.toString(),
-            portalDonationId: portalDonation._id.toString(),
-          },
-        });
-      } catch (error) {
-        console.error(
-          '[acceptDonationRequest] Failed to create notification:',
-          error
-        );
-      }
-    }
+    // NOTE: Notification to public user when donor accepts to donate has been disabled.
+    // Previously sent 'donation_request_accepted' notification with "Donation Incoming!" message.
 
     return res.status(201).json({
       success: true,
@@ -352,12 +334,49 @@ export const addGuestDonation = async (req, res) => {
     if (donationRequest) {
       donationRequest.fulfilledAmount =
         (donationRequest.fulfilledAmount || 0) + amount;
-      if (donationRequest.fulfilledAmount >= donationRequest.amount) {
+      const isFullyFulfilled =
+        donationRequest.fulfilledAmount >= donationRequest.amount;
+      if (isFullyFulfilled) {
         donationRequest.status = 'completed';
       } else {
         donationRequest.status = 'partially_fulfilled';
       }
       await donationRequest.save();
+
+      // START FCM: Notify donation request owner of guest cash donation received
+      // NOTE: FCM is now sent automatically via Notification model post-save hook
+      if (donationRequest.requestedBy) {
+        try {
+          const notificationType = isFullyFulfilled
+            ? 'donation_request_completed'
+            : 'donation_request_partially_fulfilled';
+          const notificationTitle = isFullyFulfilled
+            ? 'Donation Request Fulfilled!'
+            : 'Donation Received!';
+          const donorDisplay = donorName || 'An anonymous donor';
+          const notificationBody = isFullyFulfilled
+            ? `Great news! ${donorDisplay} has fully funded your donation request with ₹${amount}.`
+            : `${donorDisplay} donated ₹${amount} to your request. Total: ₹${donationRequest.fulfilledAmount}/${donationRequest.amount}`;
+
+          await Notification.create({
+            title: notificationTitle,
+            body: notificationBody,
+            recipientId: donationRequest.requestedBy,
+            type: notificationType,
+            targetUserType: 'public',
+            data: {
+              donationRequestId: donationRequest._id.toString(),
+              portalDonationId: portalDonation._id.toString(),
+            },
+          });
+          console.log(
+            `[addGuestDonation] Created ${notificationType} notification for user ${donationRequest.requestedBy}`
+          );
+        } catch (e) {
+          console.error('[addGuestDonation] Failed to create notification:', e);
+        }
+      }
+      // END FCM
     }
 
     // If wallet donation, add to admin wallet
@@ -429,12 +448,51 @@ export const submitCashDonation = async (req, res) => {
       if (donationRequest) {
         donationRequest.fulfilledAmount =
           (donationRequest.fulfilledAmount || 0) + amount;
-        if (donationRequest.fulfilledAmount >= donationRequest.amount) {
+        const isFullyFulfilled =
+          donationRequest.fulfilledAmount >= donationRequest.amount;
+        if (isFullyFulfilled) {
           donationRequest.status = 'completed';
         } else {
           donationRequest.status = 'partially_fulfilled';
         }
         await donationRequest.save();
+
+        // START FCM: Notify donation request owner of cash donation received
+        // NOTE: FCM is now sent automatically via Notification model post-save hook
+        if (donationRequest.requestedBy) {
+          try {
+            const notificationType = isFullyFulfilled
+              ? 'donation_request_completed'
+              : 'donation_request_partially_fulfilled';
+            const notificationTitle = isFullyFulfilled
+              ? 'Donation Request Fulfilled!'
+              : 'Donation Received!';
+            const notificationBody = isFullyFulfilled
+              ? `Great news! Your donation request has been fully funded with ₹${amount}.`
+              : `₹${amount} has been donated to your request. Total: ₹${donationRequest.fulfilledAmount}/${donationRequest.amount}`;
+
+            await Notification.create({
+              title: notificationTitle,
+              body: notificationBody,
+              recipientId: donationRequest.requestedBy,
+              type: notificationType,
+              targetUserType: 'public',
+              data: {
+                donationRequestId: donationRequest._id.toString(),
+                portalDonationId: portalDonation._id.toString(),
+              },
+            });
+            console.log(
+              `[submitCashDonation] Created ${notificationType} notification for user ${donationRequest.requestedBy}`
+            );
+          } catch (e) {
+            console.error(
+              '[submitCashDonation] Failed to create notification:',
+              e
+            );
+          }
+        }
+        // END FCM
       }
     }
 
