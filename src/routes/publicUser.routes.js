@@ -33,7 +33,7 @@ import { group } from '../utils/routerUtils.js';
 import upload from '../middleWare/upload.js';
 import { getNotifications, markAsRead } from '../controllers/notificationController.js';
 import { registerFcmToken, unregisterFcmToken } from '../controllers/fcmController.js';
-import { getMyTasks, updateTaskStatus, completeTaskWithProof, getOpenTasks, claimTask } from '../controllers/taskController.js';
+import { getMyTasks, getTaskById, updateTaskStatus, completeTaskWithProof, getOpenTasks, claimTask } from '../controllers/taskController.js';
 import { aidSchema } from '../validator/request/aid.js';
 import { donationSchema } from '../validator/request/donation.js';
 export function publicUserRoutes(router) {
@@ -82,6 +82,7 @@ export function publicUserRoutes(router) {
   // Task routes for volunteers
   router.get('/tasks', protect(['volunteer']), getMyTasks);
   router.get('/tasks/open', protect(['volunteer']), getOpenTasks); // Get available tasks
+  router.get('/tasks/:id', protect(['volunteer']), getTaskById); // Get single task by ID
   router.post('/tasks/:id/claim', protect(['volunteer']), claimTask); // Claim an open task
 
   router.put('/tasks/:id/status', protect(['volunteer']), updateTaskStatus);
