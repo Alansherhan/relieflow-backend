@@ -86,6 +86,58 @@ export const deleteTask = async (req, res) => {
   }
 };
 
+// Get a single task by ID for the logged-in volunteer
+export const getTaskById = async (req, res) => {
+  try {
+    const volunteerId = req.user.id || req.user._id;
+    const { id } = req.params;
+
+    console.log('[getTaskById] Volunteer ID:', volunteerId, 'Task ID:', id);
+
+    // Find task that belongs to this volunteer
+    const task = await TaskSchema.findOne({
+      _id: id,
+      assignedVolunteers: volunteerId
+    })
+      .populate({
+        path: 'aidRequest',
+        populate: {
+          path: 'aidRequestedBy',
+          model: 'userProfile'
+        }
+      })
+      .populate({
+        path: 'donationRequest',
+        populate: {
+          path: 'requestedBy',
+          model: 'userProfile'
+        }
+      })
+      .populate('assignedVolunteers');
+
+    if (!task) {
+      console.log('[getTaskById] Task not found or not assigned to volunteer');
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found or you do not have access to this task'
+      });
+    }
+
+    console.log('[getTaskById] Task found:', task._id, 'Status:', task.status);
+    return res.status(200).json({
+      success: true,
+      data: task
+    });
+  } catch (error) {
+    console.log('[getTaskById] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error fetching task',
+      error: error.message
+    });
+  }
+};
+
 // Get tasks assigned to the logged-in volunteer
 export const getMyTasks = async (req, res) => {
   try {

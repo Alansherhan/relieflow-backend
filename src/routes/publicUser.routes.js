@@ -128,6 +128,7 @@ export function publicUserRoutes(router) {
   // Task routes for volunteers
   router.get('/tasks', protect(['volunteer']), getMyTasks);
   router.get('/tasks/open', protect(['volunteer']), getOpenTasks); // Get available tasks
+  router.get('/tasks/:id', protect(['volunteer']), getTaskById); // Get single task by ID
   router.post('/tasks/:id/claim', protect(['volunteer']), claimTask); // Claim an open task
 
   router.put('/tasks/:id/status', protect(['volunteer']), updateTaskStatus);
