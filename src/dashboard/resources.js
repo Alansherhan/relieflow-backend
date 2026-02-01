@@ -95,6 +95,47 @@ const parseAidRequestPayload = (payload) => {
   return updateData;
 };
 
+const parseReliefCenterPayload = (payload) => {
+  const updateData = {};
+
+  if (payload.shelterName !== undefined)
+    updateData.shelterName = payload.shelterName;
+  if (payload.coordinatorName !== undefined)
+    updateData.coordinatorName = payload.coordinatorName;
+  if (payload.coordinatorNumber !== undefined)
+    updateData.coordinatorNumber = payload.coordinatorNumber;
+
+  const address = {};
+  if (payload['address.addressLine1'] !== undefined)
+    address.addressLine1 = payload['address.addressLine1'];
+  if (payload['address.addressLine2'] !== undefined)
+    address.addressLine2 = payload['address.addressLine2'];
+  if (payload['address.addressLine3'] !== undefined)
+    address.addressLine3 = payload['address.addressLine3'];
+  if (payload['address.pinCode'] !== undefined)
+    address.pinCode = payload['address.pinCode'];
+
+  if (
+    payload['address.location.coordinates.0'] !== undefined &&
+    payload['address.location.coordinates.1'] !== undefined
+  ) {
+    const lng = parseFloat(payload['address.location.coordinates.0']);
+    const lat = parseFloat(payload['address.location.coordinates.1']);
+    if (!isNaN(lng) && !isNaN(lat)) {
+      address.location = {
+        type: 'Point',
+        coordinates: [lng, lat],
+      };
+    }
+  }
+
+  if (Object.keys(address).length > 0) {
+    updateData.address = address;
+  }
+
+  return updateData;
+};
+
 export const AidRequestResource = {
   resource: AidRequest,
   options: {
@@ -876,6 +917,113 @@ export const ReliefCenterResource = {
       'address.location.type': { isVisible: false },
       'address.location.coordinates': { isVisible: false },
     },
+    actions: {
+      new: {
+        handler: async (request, response, context) => {
+          const { resource, currentAdmin } = context;
+
+          if (request.method === 'get') {
+            return { record: {} };
+          }
+
+          const payload = request.payload || {};
+          console.log(
+            '[DEBUG HANDLER] ReliefCenter new handler - payload keys:',
+            Object.keys(payload)
+          );
+
+          const updateData = parseReliefCenterPayload(payload);
+
+          console.log(
+            '[DEBUG HANDLER] ReliefCenter create data:',
+            JSON.stringify(updateData, null, 2)
+          );
+
+          try {
+            const Model =
+              resource._decorated?.mongoose?.model ||
+              resource.MongooseModel ||
+              ReliefCenter;
+            const newRecord = await Model.create(updateData);
+
+            return {
+              record: newRecord.toJSON(currentAdmin),
+              redirectUrl: context.h.resourceUrl({ resourceId: resource.id() }),
+              notice: {
+                message: 'Relief Center created successfully',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[DEBUG HANDLER] ReliefCenter create error:', error);
+            return {
+              record: {
+                params: payload,
+                errors: { payload: { message: error.message } },
+              },
+              notice: {
+                message: `Error creating: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
+      edit: {
+        handler: async (request, response, context) => {
+          const { resource, record, currentAdmin } = context;
+
+          if (request.method === 'get') {
+            return { record: record.toJSON(currentAdmin) };
+          }
+
+          const payload = request.payload || {};
+          console.log(
+            '[DEBUG HANDLER] ReliefCenter edit handler - payload keys:',
+            Object.keys(payload)
+          );
+
+          const updateData = parseReliefCenterPayload(payload);
+
+          console.log(
+            '[DEBUG HANDLER] ReliefCenter update data:',
+            JSON.stringify(updateData, null, 2)
+          );
+
+          try {
+            const Model =
+              resource._decorated?.mongoose?.model ||
+              resource.MongooseModel ||
+              ReliefCenter;
+            await Model.findByIdAndUpdate(record.id(), { $set: updateData });
+
+            const updatedRecord = await resource.findOne(record.id());
+
+            return {
+              record: updatedRecord.toJSON(currentAdmin),
+              redirectUrl: context.h.recordActionUrl({
+                resourceId: resource.id(),
+                recordId: record.id(),
+                actionName: 'show',
+              }),
+              notice: {
+                message: 'Relief Center updated successfully',
+                type: 'success',
+              },
+            };
+          } catch (error) {
+            console.error('[DEBUG HANDLER] ReliefCenter save error:', error);
+            return {
+              record: record.toJSON(currentAdmin),
+              notice: {
+                message: `Error saving: ${error.message}`,
+                type: 'error',
+              },
+            };
+          }
+        },
+      },
+    },
     translations: {
       en: {
         labels: {
@@ -947,7 +1095,7 @@ export const TaskResource = {
       },
       // Legacy location field
       location: {
-        isVisible: { list: false, filter: false, show: true, edit: false },
+        isVisible: { list: false, filter: false, show: false, edit: false },
         components: {
           show: Components.TaskLocationShow,
         },
