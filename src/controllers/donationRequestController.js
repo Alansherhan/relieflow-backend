@@ -124,15 +124,31 @@ export const addDonationRequest = async (req, res) => {
 
 export const getAllDonationRequests = async (req, res) => {
   try {
+    // Get the logged-in user's ID from JWT token
+    const userId = req.user._id || req.user.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+    }
+
+    // Filter by the current user's donation requests only
     // Use lean({ virtuals: true }) to include 'name' virtual
-    const allDonationRequests = await DonationRequest.find()
+    const allDonationRequests = await DonationRequest.find({
+      requestedBy: userId,
+    })
       .populate('requestedBy')
-      .sort({ _id: -1 })
+      .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
     // Debug logging for consistency check
     console.log('=== getAllDonationRequests DEBUG ===');
-    console.log(`Found ${allDonationRequests.length} donation requests`);
+    console.log(`User ID: ${userId}`);
+    console.log(
+      `Found ${allDonationRequests.length} donation requests for this user`
+    );
     if (allDonationRequests.length > 0) {
       const first = allDonationRequests[0];
       console.log('First request sample:', {
@@ -147,10 +163,11 @@ export const getAllDonationRequests = async (req, res) => {
     }
 
     return res.status(200).json({
-      sucess: true,
+      success: true,
       message: allDonationRequests,
     });
   } catch (error) {
+    console.log('getAllDonationRequests error:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
