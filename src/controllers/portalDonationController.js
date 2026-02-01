@@ -220,41 +220,11 @@ export const acceptDonationRequest = async (req, res) => {
       await portalDonation.save();
     }
 
-    // Update DonationRequest fulfilled quantities for item donations
-    if (
-      actualDonationType === 'item' &&
-      itemDetails &&
-      itemDetails.length > 0
-    ) {
-      if (donationRequest.itemDetails) {
-        itemDetails.forEach((donatedItem) => {
-          const requestItem = donationRequest.itemDetails.find(
-            (ri) => ri.category === donatedItem.category
-          );
-          if (requestItem) {
-            requestItem.fulfilledQuantity =
-              (requestItem.fulfilledQuantity || 0) +
-              (donatedItem.quantity || 0);
-          }
-        });
-
-        // Check fulfillment status
-        const allFulfilled = donationRequest.itemDetails.every(
-          (item) => (item.fulfilledQuantity || 0) >= item.quantity
-        );
-        const partiallyFulfilled = donationRequest.itemDetails.some(
-          (item) => (item.fulfilledQuantity || 0) > 0
-        );
-
-        if (allFulfilled) {
-          donationRequest.status = 'completed';
-        } else if (partiallyFulfilled) {
-          donationRequest.status = 'partially_fulfilled';
-        }
-
-        await donationRequest.save();
-      }
-    }
+    // NOTE: For item donations, we do NOT update fulfilled quantities here.
+    // Fulfillment is only updated when the donation is actually delivered:
+    // - Self-delivery: in submitItemDonation when donor confirms delivery
+    // - Pickup: in completeTaskWithProof when volunteer completes pickup
+    // This prevents requests from showing as "partially fulfilled" before items arrive.
 
     // NOTE: For cash donations, we do NOT update fulfilledAmount here.
     // The fulfilledAmount is updated only when actual payment is submitted in submitCashDonation.
@@ -557,9 +527,41 @@ export const submitItemDonation = async (req, res) => {
     if (itemDetails) portalDonation.itemDetails = itemDetails;
     if (proofImage) portalDonation.proofImage = proofImage;
     if (notes) portalDonation.notes = notes;
-    // Status changes to completed (fulfillment qty already updated at accept time)
     portalDonation.status = 'completed';
     await portalDonation.save();
+
+    // NOW update the DonationRequest fulfilled quantities (items have been delivered)
+    if (portalDonation.donationRequest && donatedItems && donatedItems.length > 0) {
+      const donationRequest = await DonationRequest.findById(portalDonation.donationRequest);
+      if (donationRequest && donationRequest.itemDetails) {
+        donatedItems.forEach((donatedItem) => {
+          const requestItem = donationRequest.itemDetails.find(
+            (ri) => ri.category === donatedItem.category
+          );
+          if (requestItem) {
+            requestItem.fulfilledQuantity =
+              (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
+          }
+        });
+
+        // Check fulfillment status
+        const allFulfilled = donationRequest.itemDetails.every(
+          (item) => (item.fulfilledQuantity || 0) >= item.quantity
+        );
+        const partiallyFulfilled = donationRequest.itemDetails.some(
+          (item) => (item.fulfilledQuantity || 0) > 0
+        );
+
+        if (allFulfilled) {
+          donationRequest.status = 'completed';
+        } else if (partiallyFulfilled) {
+          donationRequest.status = 'partially_fulfilled';
+        }
+
+        await donationRequest.save();
+        console.log(`[submitItemDonation] Updated DonationRequest ${donationRequest._id} fulfillment`);
+      }
+    }
 
     // START FCM: Notify Donor of successful submission
     // NOTE: FCM is now sent automatically via Notification model post-save hook
@@ -827,8 +829,14 @@ export const cancelDonation = async (req, res) => {
       });
     }
 
-    // Revert fulfilled quantities on DonationRequest
+    // Only revert fulfilled quantities if the donation was actually completed
+    // Pending donations (pending_delivery, pending_payment, awaiting_volunteer, pickup_scheduled)
+    // never updated the fulfillment, so nothing to revert
+    const wasCompleted = portalDonation.status === 'completed';
+
+    // Revert fulfilled quantities on DonationRequest (only for completed item donations)
     if (
+      wasCompleted &&
       portalDonation.donationRequest &&
       portalDonation.donationType === 'item'
     ) {
@@ -865,7 +873,6 @@ export const cancelDonation = async (req, res) => {
 
     // Revert cash donation - only if it was completed (payment was processed)
     // pending_payment donations never updated fulfilledAmount, so nothing to revert
-    const wasCompleted = portalDonation.status === 'completed';
     if (
       wasCompleted &&
       portalDonation.donationRequest &&

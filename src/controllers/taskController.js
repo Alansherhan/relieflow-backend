@@ -1,5 +1,6 @@
 import TaskSchema from '../models/Task.js';
 import AidRequest from '../models/AidRequest.js';
+import DonationRequest from '../models/DonationRequest.js';
 import Notification from '../models/Notification.js';
 import PortalDonation from '../models/PortalDonation.js';
 // FCM is now sent automatically via Notification model post-save hook
@@ -481,6 +482,7 @@ export const completeTaskWithProof = async (req, res) => {
 
     // Sync PortalDonation status for pickup tasks
     // When volunteer completes a pickup task, update linked PortalDonation to completed
+    // and update the DonationRequest fulfillment quantities
     try {
       const portalDonation = await PortalDonation.findOne({
         pickupTask: task._id,
@@ -491,6 +493,47 @@ export const completeTaskWithProof = async (req, res) => {
         console.log(
           `[completeTaskWithProof] PortalDonation ${portalDonation._id} updated to completed`
         );
+
+        // NOW update the DonationRequest fulfilled quantities (items have been delivered)
+        if (
+          portalDonation.donationRequest &&
+          portalDonation.itemDetails &&
+          portalDonation.itemDetails.length > 0
+        ) {
+          const donationRequest = await DonationRequest.findById(
+            portalDonation.donationRequest
+          );
+          if (donationRequest && donationRequest.itemDetails) {
+            portalDonation.itemDetails.forEach((donatedItem) => {
+              const requestItem = donationRequest.itemDetails.find(
+                (ri) => ri.category === donatedItem.category
+              );
+              if (requestItem) {
+                requestItem.fulfilledQuantity =
+                  (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
+              }
+            });
+
+            // Check fulfillment status
+            const allFulfilled = donationRequest.itemDetails.every(
+              (item) => (item.fulfilledQuantity || 0) >= item.quantity
+            );
+            const partiallyFulfilled = donationRequest.itemDetails.some(
+              (item) => (item.fulfilledQuantity || 0) > 0
+            );
+
+            if (allFulfilled) {
+              donationRequest.status = 'completed';
+            } else if (partiallyFulfilled) {
+              donationRequest.status = 'partially_fulfilled';
+            }
+
+            await donationRequest.save();
+            console.log(
+              `[completeTaskWithProof] Updated DonationRequest ${donationRequest._id} fulfillment`
+            );
+          }
+        }
       }
     } catch (error) {
       console.error(
