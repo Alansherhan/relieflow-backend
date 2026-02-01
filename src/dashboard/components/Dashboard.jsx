@@ -235,7 +235,9 @@ const Dashboard = () => {
             <span style={{ color: COLORS.green }}>✓ {stats?.tasks?.completed || 0}</span>
             {' completed • '}
             <span style={{ color: COLORS.cyan }}>{stats?.tasks?.open || 0}</span>
-            {' open'}
+            {' open  • '}
+            <span style={{ color: COLORS.cyan }}>{stats?.tasks?.assigned || 0}</span>
+            {' assigned'}
           </div>
         </div>
 
