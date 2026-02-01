@@ -16,11 +16,6 @@ import {
   updateDonationRequest,
 } from '../controllers/donationRequestController.js';
 import {
-  addDonation,
-  getAllDonations,
-  getDonationsForRequest,
-} from '../controllers/donationController.js';
-import {
   addAidRequest,
   getMyAidRequests,
 } from '../controllers/aidRequestController.js';
@@ -52,7 +47,7 @@ import {
   getTaskById,
 } from '../controllers/taskController.js';
 import { aidSchema } from '../validator/request/aid.js';
-import { donationSchema } from '../validator/request/donation.js';
+// import { donationSchema } from '../validator/request/donation.js';
 export function publicUserRoutes(router) {
   router.post('/signup', validate(signupSchema), signUp);
   router.post('/login', validate(loginSchema), login);
@@ -83,16 +78,12 @@ export function publicUserRoutes(router) {
       rootRouter.post(
         '/request/add',
         upload.array('proofImages'),
-        validate(donationSchema),
+        // validate(donationSchema),
         addDonationRequest
       );
       rootRouter.get('/request/', getAllDonationRequests);
       rootRouter.put('/update-donation/:id', updateDonationRequest);
       rootRouter.delete('/delete/:id', deletedDonationRequest);
-
-      rootRouter.post('/donate', addDonation);
-      rootRouter.get('/', getAllDonations);
-      rootRouter.get('/request/:requestId/donations', getDonationsForRequest);
     },
     router
   );
