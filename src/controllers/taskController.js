@@ -95,8 +95,8 @@ export const getTaskById = async (req, res) => {
 
     console.log('[getTaskById] Volunteer ID:', volunteerId, 'Task ID:', id);
 
-    // Find task that belongs to this volunteer
-    const task = await TaskSchema.findOne({
+    // First, try to find task that belongs to this volunteer
+    let task = await TaskSchema.findOne({
       _id: id,
       assignedVolunteers: volunteerId,
     })
@@ -116,8 +116,32 @@ export const getTaskById = async (req, res) => {
       })
       .populate('assignedVolunteers');
 
+    // If not found, check if it's an open task (available for claiming from notification)
     if (!task) {
-      console.log('[getTaskById] Task not found or not assigned to volunteer');
+      console.log('[getTaskById] Not assigned to volunteer, checking if open task...');
+      task = await TaskSchema.findOne({
+        _id: id,
+        status: { $in: ['open', 'accepted'] }  // Open tasks or partially assigned
+      })
+        .populate({
+          path: 'aidRequest',
+          populate: {
+            path: 'aidRequestedBy',
+            model: 'userProfile'
+          }
+        })
+        .populate({
+          path: 'donationRequest',
+          populate: {
+            path: 'requestedBy',
+            model: 'userProfile'
+          }
+        })
+        .populate('assignedVolunteers');
+    }
+
+    if (!task) {
+      console.log('[getTaskById] Task not found or not accessible');
       return res.status(404).json({
         success: false,
         message: 'Task not found or you do not have access to this task',
