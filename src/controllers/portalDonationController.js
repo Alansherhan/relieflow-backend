@@ -531,8 +531,14 @@ export const submitItemDonation = async (req, res) => {
     await portalDonation.save();
 
     // NOW update the DonationRequest fulfilled quantities (items have been delivered)
-    if (portalDonation.donationRequest && donatedItems && donatedItems.length > 0) {
-      const donationRequest = await DonationRequest.findById(portalDonation.donationRequest);
+    if (
+      portalDonation.donationRequest &&
+      donatedItems &&
+      donatedItems.length > 0
+    ) {
+      const donationRequest = await DonationRequest.findById(
+        portalDonation.donationRequest
+      );
       if (donationRequest && donationRequest.itemDetails) {
         donatedItems.forEach((donatedItem) => {
           const requestItem = donationRequest.itemDetails.find(
@@ -540,7 +546,8 @@ export const submitItemDonation = async (req, res) => {
           );
           if (requestItem) {
             requestItem.fulfilledQuantity =
-              (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
+              (requestItem.fulfilledQuantity || 0) +
+              (donatedItem.quantity || 0);
           }
         });
 
@@ -559,7 +566,9 @@ export const submitItemDonation = async (req, res) => {
         }
 
         await donationRequest.save();
-        console.log(`[submitItemDonation] Updated DonationRequest ${donationRequest._id} fulfillment`);
+        console.log(
+          `[submitItemDonation] Updated DonationRequest ${donationRequest._id} fulfillment`
+        );
       }
     }
 

@@ -98,21 +98,21 @@ export const getTaskById = async (req, res) => {
     // Find task that belongs to this volunteer
     const task = await TaskSchema.findOne({
       _id: id,
-      assignedVolunteers: volunteerId
+      assignedVolunteers: volunteerId,
     })
       .populate({
         path: 'aidRequest',
         populate: {
           path: 'aidRequestedBy',
-          model: 'userProfile'
-        }
+          model: 'userProfile',
+        },
       })
       .populate({
         path: 'donationRequest',
         populate: {
           path: 'requestedBy',
-          model: 'userProfile'
-        }
+          model: 'userProfile',
+        },
       })
       .populate('assignedVolunteers');
 
@@ -120,21 +120,21 @@ export const getTaskById = async (req, res) => {
       console.log('[getTaskById] Task not found or not assigned to volunteer');
       return res.status(404).json({
         success: false,
-        message: 'Task not found or you do not have access to this task'
+        message: 'Task not found or you do not have access to this task',
       });
     }
 
     console.log('[getTaskById] Task found:', task._id, 'Status:', task.status);
     return res.status(200).json({
       success: true,
-      data: task
+      data: task,
     });
   } catch (error) {
     console.log('[getTaskById] Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching task',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -510,7 +510,8 @@ export const completeTaskWithProof = async (req, res) => {
               );
               if (requestItem) {
                 requestItem.fulfilledQuantity =
-                  (requestItem.fulfilledQuantity || 0) + (donatedItem.quantity || 0);
+                  (requestItem.fulfilledQuantity || 0) +
+                  (donatedItem.quantity || 0);
               }
             });
 
