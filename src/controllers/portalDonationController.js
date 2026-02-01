@@ -203,15 +203,53 @@ export const acceptDonationRequest = async (req, res) => {
         donationRequest: donationRequestId,
       };
 
-      // Add location if provided
+      // Add pickup location if provided (donor's location)
       if (
         pickupLocation &&
         pickupLocation.coordinates &&
         Array.isArray(pickupLocation.coordinates)
       ) {
+        taskData.pickupLocation = {
+          type: 'Point',
+          coordinates: pickupLocation.coordinates,
+        };
+        // Also set legacy location field for backward compatibility
         taskData.location = {
           type: 'Point',
           coordinates: pickupLocation.coordinates,
+        };
+      }
+
+      // Add pickup address for display
+      if (pickupAddress) {
+        taskData.pickupAddress = {
+          addressLine1: pickupAddress.addressLine1,
+          addressLine2: pickupAddress.addressLine2,
+          addressLine3: pickupAddress.addressLine3,
+          pinCode: pickupAddress.pinCode,
+        };
+      }
+
+      // Add delivery location from donation request (beneficiary's location)
+      if (donationRequest.location?.coordinates?.length === 2) {
+        taskData.deliveryLocation = {
+          type: 'Point',
+          coordinates: donationRequest.location.coordinates,
+        };
+      } else if (donationRequest.address?.location?.coordinates?.length === 2) {
+        taskData.deliveryLocation = {
+          type: 'Point',
+          coordinates: donationRequest.address.location.coordinates,
+        };
+      }
+
+      // Add delivery address for display
+      if (donationRequest.address) {
+        taskData.deliveryAddress = {
+          addressLine1: donationRequest.address.addressLine1,
+          addressLine2: donationRequest.address.addressLine2,
+          addressLine3: donationRequest.address.addressLine3,
+          pinCode: donationRequest.address.pinCode,
         };
       }
 

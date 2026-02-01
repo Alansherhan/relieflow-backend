@@ -11,17 +11,42 @@ export const assignTask = async (req, res) => {
   const assignedVolunteers = req.body.assignedVolunteers || [];
   const donationRequest = req.body.donationRequest;
   const volunteersNeeded = req.body.volunteersNeeded || 1;
+  const priority = req.body.priority || 'low';
+  // Location fields
+  const pickupLocation = req.body.pickupLocation;
+  const pickupAddress = req.body.pickupAddress;
+  const deliveryLocation = req.body.deliveryLocation;
+  const deliveryAddress = req.body.deliveryAddress;
 
   try {
-    const taskAssigned = await TaskSchema.create({
+    const taskData = {
       taskName: taskName,
       taskType: taskType,
       status: assignedVolunteers.length > 0 ? 'assigned' : 'open',
-      priority: 'low',
+      priority: priority,
       volunteersNeeded: volunteersNeeded,
       assignedVolunteers: assignedVolunteers,
       donationRequest: donationRequest,
-    });
+    };
+
+    // Add pickup location if provided (donor's location for pickup)
+    if (pickupLocation?.coordinates?.length === 2) {
+      taskData.pickupLocation = pickupLocation;
+      taskData.location = pickupLocation; // Legacy support
+    }
+    if (pickupAddress) {
+      taskData.pickupAddress = pickupAddress;
+    }
+
+    // Add delivery location if provided (beneficiary's location)
+    if (deliveryLocation?.coordinates?.length === 2) {
+      taskData.deliveryLocation = deliveryLocation;
+    }
+    if (deliveryAddress) {
+      taskData.deliveryAddress = deliveryAddress;
+    }
+
+    const taskAssigned = await TaskSchema.create(taskData);
 
     return res.status(201).json({
       success: true,
@@ -118,24 +143,26 @@ export const getTaskById = async (req, res) => {
 
     // If not found, check if it's an open task (available for claiming from notification)
     if (!task) {
-      console.log('[getTaskById] Not assigned to volunteer, checking if open task...');
+      console.log(
+        '[getTaskById] Not assigned to volunteer, checking if open task...'
+      );
       task = await TaskSchema.findOne({
         _id: id,
-        status: { $in: ['open', 'accepted'] }  // Open tasks or partially assigned
+        status: { $in: ['open', 'accepted'] }, // Open tasks or partially assigned
       })
         .populate({
           path: 'aidRequest',
           populate: {
             path: 'aidRequestedBy',
-            model: 'userProfile'
-          }
+            model: 'userProfile',
+          },
         })
         .populate({
           path: 'donationRequest',
           populate: {
             path: 'requestedBy',
-            model: 'userProfile'
-          }
+            model: 'userProfile',
+          },
         })
         .populate('assignedVolunteers');
     }
@@ -884,9 +911,20 @@ export const createTaskFromAidRequest = async (req, res) => {
       imageUrl: aidRequest.imageUrl,
     };
 
-    // Only add location if it has valid coordinates
+    // Add delivery location (beneficiary's location) from aid request
     if (aidRequest.location?.coordinates?.length === 2) {
-      taskData.location = aidRequest.location;
+      taskData.deliveryLocation = aidRequest.location;
+      taskData.location = aidRequest.location; // Legacy support
+    }
+
+    // Add delivery address from aid request
+    if (aidRequest.address) {
+      taskData.deliveryAddress = {
+        addressLine1: aidRequest.address.addressLine1,
+        addressLine2: aidRequest.address.addressLine2,
+        addressLine3: aidRequest.address.addressLine3,
+        pinCode: aidRequest.address.pinCode,
+      };
     }
 
     const task = await TaskSchema.create(taskData);
