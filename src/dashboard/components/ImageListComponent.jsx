@@ -17,12 +17,18 @@ const ImageListComponent = (props) => {
         return null;
     }
 
+    // Normalize URL: ensure it starts with '/' for server-relative paths
+    const normalizeUrl = (url) => {
+        if (!url) return url;
+        return url.startsWith('/') || url.startsWith('http') ? url : `/${url}`;
+    };
+
     return (
         <Box display="flex" flexDirection="row" flexWrap="wrap" gap={2}>
             {images.map((url, index) => (
                 <img
                     key={index}
-                    src={url}
+                    src={normalizeUrl(url)}
                     alt={`${property.label}-${index}`}
                     style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'cover' }}
                 />

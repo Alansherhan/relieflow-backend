@@ -661,7 +661,10 @@ export const requestPickup = async (req, res) => {
       priority: 'medium',
       volunteersNeeded: 1,
       donationRequest: portalDonation.donationRequest,
+      skipNotification: true, // We send custom notification below
     };
+
+    console.log('[requestPickup] Creating task with skipNotification:', taskData.skipNotification);
 
     // Only add location if valid GeoJSON coordinates provided
     if (

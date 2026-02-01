@@ -70,6 +70,11 @@ const taskSchema = new mongoose.Schema({
     completedAt: {
         type: Date,
         required: false
+    },
+    // Flag to skip notification from post-save hook (when caller handles it)
+    skipNotification: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 
@@ -87,11 +92,22 @@ taskSchema.virtual('remainingSlots').get(function() {
 taskSchema.pre('save', function (next) {
     this._wasNew = this.isNew;
     this._previousVolunteers = this._original?.assignedVolunteers || [];
+    // Capture skipNotification before save (it may not persist to DB)
+    this._skipNotification = this.skipNotification;
     next();
 });
 
 // Post-save hook: Create notifications
 taskSchema.post('save', async function (doc) {
+    // Skip notification if flag is set (caller handles it)
+    // Check both the doc property and the captured _skipNotification
+    if (doc.skipNotification || this._skipNotification) {
+        console.log('[Task Hook] Skipping notification (skipNotification=true)');
+        return;
+    }
+
+    console.log('[Task Hook] Processing notification for task:', doc._id, 'status:', doc.status, 'wasNew:', this._wasNew);
+
     try {
         // For NEW tasks
         if (this._wasNew) {
@@ -105,6 +121,9 @@ taskSchema.post('save', async function (doc) {
                         body: `You have been assigned: ${doc.taskName}`,
                         recipientId: volunteerId,
                         type: 'task_assigned',
+                        data: {
+                            taskId: doc._id.toString(),
+                        },
                     });
                 }
                 console.log('[Task Hook] Assigned volunteer notifications created');
@@ -119,6 +138,9 @@ taskSchema.post('save', async function (doc) {
                     recipientId: null, // null = broadcast to all
                     type: 'task_open_broadcast',
                     targetUserType: 'volunteer',
+                    data: {
+                        taskId: doc._id.toString(),
+                    },
                 });
                 console.log('[Task Hook] Broadcast notification created');
             }
