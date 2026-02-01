@@ -929,6 +929,53 @@ export const TaskResource = {
           edit: Components.DonationRequestStatusFilteredSelect,
         },
       },
+      // Pickup Location - with map display
+      pickupLocation: {
+        isVisible: { list: true, filter: false, show: true, edit: false },
+        components: {
+          list: Components.TaskLocationLink,
+          show: Components.TaskLocationShow,
+        },
+      },
+      // Delivery Location - with map display
+      deliveryLocation: {
+        isVisible: { list: true, filter: false, show: true, edit: false },
+        components: {
+          list: Components.TaskLocationLink,
+          show: Components.TaskLocationShow,
+        },
+      },
+      // Legacy location field
+      location: {
+        isVisible: { list: false, filter: false, show: true, edit: false },
+        components: {
+          show: Components.TaskLocationShow,
+        },
+      },
+      // Pickup Address display
+      pickupAddress: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+      },
+      // Delivery Address display
+      deliveryAddress: {
+        isVisible: { list: false, filter: false, show: true, edit: true },
+      },
+      // Hide nested location fields to prevent duplication
+      'pickupLocation.type': { isVisible: false },
+      'pickupLocation.coordinates': { isVisible: false },
+      'deliveryLocation.type': { isVisible: false },
+      'deliveryLocation.coordinates': { isVisible: false },
+      'location.type': { isVisible: false },
+      'location.coordinates': { isVisible: false },
+      // Hide nested address fields (handled by parent display)
+      'pickupAddress.addressLine1': { isVisible: false },
+      'pickupAddress.addressLine2': { isVisible: false },
+      'pickupAddress.addressLine3': { isVisible: false },
+      'pickupAddress.pinCode': { isVisible: false },
+      'deliveryAddress.addressLine1': { isVisible: false },
+      'deliveryAddress.addressLine2': { isVisible: false },
+      'deliveryAddress.addressLine3': { isVisible: false },
+      'deliveryAddress.pinCode': { isVisible: false },
     },
     translations: {
       en: {
@@ -938,6 +985,10 @@ export const TaskResource = {
         properties: {
           assignedVolunteers: 'Assigned Volunteers',
           volunteersNeeded: 'Volunteers Needed',
+          pickupLocation: 'Pickup Location',
+          deliveryLocation: 'Delivery Location',
+          pickupAddress: 'Pickup Address',
+          deliveryAddress: 'Delivery Address',
         },
       },
     },

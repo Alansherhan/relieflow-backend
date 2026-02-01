@@ -664,7 +664,12 @@ export const requestPickup = async (req, res) => {
     // Handle proof image upload
     const proofImage = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Build task data - location is optional
+    // Fetch donation request to get delivery location
+    const donationRequest = await DonationRequest.findById(
+      portalDonation.donationRequest
+    );
+
+    // Build task data with both pickup and delivery locations
     const taskData = {
       taskName: `Pickup donation from ${portalDonation.donorName}`,
       taskType: 'donation',
@@ -674,16 +679,77 @@ export const requestPickup = async (req, res) => {
       donationRequest: portalDonation.donationRequest,
     };
 
-    // Only add location if valid GeoJSON coordinates provided
+    // Extract pickup location coordinates (donor's location)
+    // Try pickupLocation first, then fallback to pickupAddress.location
+    let pickupCoordinates = null;
     if (
       pickupLocation &&
       pickupLocation.coordinates &&
       Array.isArray(pickupLocation.coordinates)
     ) {
+      pickupCoordinates = pickupLocation.coordinates;
+    } else if (
+      pickupAddress?.location?.coordinates &&
+      Array.isArray(pickupAddress.location.coordinates)
+    ) {
+      pickupCoordinates = pickupAddress.location.coordinates;
+    }
+
+    // Set pickup location on task
+    if (pickupCoordinates) {
+      taskData.pickupLocation = {
+        type: 'Point',
+        coordinates: pickupCoordinates,
+      };
+      // Also set legacy location field for backward compatibility
       taskData.location = {
         type: 'Point',
-        coordinates: pickupLocation.coordinates,
+        coordinates: pickupCoordinates,
       };
+    }
+
+    // Set pickup address on task (for display)
+    if (pickupAddress) {
+      taskData.pickupAddress = {
+        addressLine1: pickupAddress.addressLine1,
+        addressLine2: pickupAddress.addressLine2,
+        addressLine3: pickupAddress.addressLine3,
+        pinCode: pickupAddress.pinCode,
+      };
+    }
+
+    // Extract delivery location from donation request (beneficiary's location)
+    if (donationRequest) {
+      // Try location field first, then address.location
+      let deliveryCoordinates = null;
+      if (
+        donationRequest.location?.coordinates &&
+        Array.isArray(donationRequest.location.coordinates)
+      ) {
+        deliveryCoordinates = donationRequest.location.coordinates;
+      } else if (
+        donationRequest.address?.location?.coordinates &&
+        Array.isArray(donationRequest.address.location.coordinates)
+      ) {
+        deliveryCoordinates = donationRequest.address.location.coordinates;
+      }
+
+      if (deliveryCoordinates) {
+        taskData.deliveryLocation = {
+          type: 'Point',
+          coordinates: deliveryCoordinates,
+        };
+      }
+
+      // Set delivery address on task (for display)
+      if (donationRequest.address) {
+        taskData.deliveryAddress = {
+          addressLine1: donationRequest.address.addressLine1,
+          addressLine2: donationRequest.address.addressLine2,
+          addressLine3: donationRequest.address.addressLine3,
+          pinCode: donationRequest.address.pinCode,
+        };
+      }
     }
 
     // Auto-create pickup task for volunteers

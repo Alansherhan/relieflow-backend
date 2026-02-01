@@ -60,9 +60,14 @@ const Components = {
     'MapPicker',
     path.join(__dirname, 'MapPicker.jsx')
   ),
-  MapShow: componentLoader.add(
-    'MapShow',
-    path.join(__dirname, 'MapShow.jsx')
+  MapShow: componentLoader.add('MapShow', path.join(__dirname, 'MapShow.jsx')),
+  TaskLocationShow: componentLoader.add(
+    'TaskLocationShow',
+    path.join(__dirname, 'TaskLocationShow.jsx')
+  ),
+  TaskLocationLink: componentLoader.add(
+    'TaskLocationLink',
+    path.join(__dirname, 'TaskLocationLink.jsx')
   ),
   HeatmapVisualization: componentLoader.add(
     'HeatmapVisualization',

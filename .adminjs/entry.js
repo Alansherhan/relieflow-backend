@@ -25,6 +25,10 @@ import MapPicker from '../src/dashboard/components/MapPicker'
 AdminJS.UserComponents.MapPicker = MapPicker
 import MapShow from '../src/dashboard/components/MapShow'
 AdminJS.UserComponents.MapShow = MapShow
+import TaskLocationShow from '../src/dashboard/components/TaskLocationShow'
+AdminJS.UserComponents.TaskLocationShow = TaskLocationShow
+import TaskLocationLink from '../src/dashboard/components/TaskLocationLink'
+AdminJS.UserComponents.TaskLocationLink = TaskLocationLink
 import HeatmapVisualization from '../src/dashboard/components/HeatmapVisualization'
 AdminJS.UserComponents.HeatmapVisualization = HeatmapVisualization
 import NotificationForm from '../src/dashboard/components/NotificationForm'
