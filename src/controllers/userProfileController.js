@@ -19,14 +19,13 @@ const getDatabase = async () => {
 
 export const signUp = async (req, res) => {
   const name = req.body.name;
-  const email = req.body.email;
+  const email = req.body.email.toLowerCase();
   const address = req.body.address;
   const phoneNumber = req.body.phoneNumber;
   const password = req.body.password;
   const role = req.body.role;
 
   try {
-
     if (!name || !email || !address || !phoneNumber || !password || !role) {
       return res.status(400).json({
         success: false,
@@ -34,7 +33,9 @@ export const signUp = async (req, res) => {
       });
     }
 
-    const userExists = await User.findOne({ $or: [{ email: email }, { phoneNumber: phoneNumber }] });
+    const userExists = await User.findOne({
+      $or: [{ email: email }, { phoneNumber: phoneNumber }],
+    });
     if (userExists) {
       return res.status(400).json({
         success: false,
@@ -90,7 +91,7 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
     const userLogin = await User.findOne({
-      email: email,
+      email: email.toLowerCase(),
     });
 
     const errorResponse = {
@@ -170,7 +171,7 @@ export const updateProfile = async (req, res) => {
     if (name) user.name = name;
     if (address) user.address = address;
     if (phoneNumber) user.phoneNumber = phoneNumber;
-    if (email) user.email = email;
+    if (email) user.email = email.toLowerCase();
     if (skill) user.skill = skill;
 
     // HANDLE IMAGE UPLOAD
@@ -277,7 +278,7 @@ export const changePassword = async (req, res) => {
     if (!oldPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Old password and new password are required'
+        message: 'Old password and new password are required',
       });
     }
 
@@ -287,7 +288,7 @@ export const changePassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -297,7 +298,7 @@ export const changePassword = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({
         success: false,
-        message: 'Incorrect current password'
+        message: 'Incorrect current password',
       });
     }
 
@@ -307,13 +308,13 @@ export const changePassword = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Password updated successfully'
+      message: 'Password updated successfully',
     });
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update password'
+      message: 'Failed to update password',
     });
   }
 };
@@ -327,7 +328,15 @@ export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    console.log(`[FORGOT PASSWORD] Request received for email: ${email}`);
+    console.log(`Searching for user with email: ${email.toLowerCase()}`);
+    console.log('='.repeat(50));
+    console.log('All Users in Database:');
+    const allUsers = await User.find({});
+    console.log(allUsers);
+
     const user = await User.findOne({ email: email.toLowerCase() });
+    console.log(user);
 
     // For security, always return success even if user doesn't exist
     if (!user) {
