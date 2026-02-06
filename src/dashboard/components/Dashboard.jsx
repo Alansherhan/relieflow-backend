@@ -268,6 +268,24 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <Box mt="xl">
+        <H5 mb="lg">Quick Actions</H5>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          
+          <a href="/dashboard/resources/AidRequest" className="quick-action-card" style={{ padding: '14px 20px', flexDirection: 'row', gap: '10px' }}>
+            📋 View Aid Requests
+          </a>
+             <a href="/dashboard/resources/DonationRequest" className="quick-action-card" style={{ padding: '14px 20px', flexDirection: 'row', gap: '10px' }}>
+            💸 View Donations
+          </a>
+          <a href="/dashboard/resources/userProfile" className="quick-action-card" style={{ padding: '14px 20px', flexDirection: 'row', gap: '10px' }}>
+            👥 Manage Users
+          </a>
+          <a href="/dashboard/resources/Notification/actions/new" className="quick-action-card" style={{ padding: '14px 20px', flexDirection: 'row', gap: '10px' }}>
+            🔔 Send Notification
+          </a>
+        </div>
+      </Box>
 
       {/* Recent Activity Cards */}
       <Box mb="xl">
@@ -372,6 +390,7 @@ const Dashboard = () => {
             <>
               <div className="wallet-balance">
                 <div className="wallet-amount">{formatCurrency(stats.wallet.balance)}</div>
+                <br></br>
                 <div className="wallet-label">Current Balance</div>
               </div>
               <div className="wallet-stats">
@@ -437,37 +456,7 @@ const Dashboard = () => {
       </Box>
 
       {/* Quick Actions */}
-      <Box mt="xl">
-        <H5 mb="lg">Quick Actions</H5>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <a href="/dashboard/resources/AidRequest" className="quick-action-card" style={{ padding: '14px 20px', flexDirection: 'row', gap: '10px' }}>
-            📋 View Aid Requests
-          </a>
-          <a
-            href="/dashboard/resources/TaskSchema/actions/new"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '14px 20px',
-              background: COLORS.primary,
-              borderRadius: '10px',
-              border: 'none',
-              textDecoration: 'none',
-              color: 'white',
-              fontWeight: '500',
-            }}
-          >
-            ➕ Create New Task
-          </a>
-          <a href="/dashboard/resources/userProfile" className="quick-action-card" style={{ padding: '14px 20px', flexDirection: 'row', gap: '10px' }}>
-            👥 Manage Users
-          </a>
-          <a href="/dashboard/resources/Notification/actions/new" className="quick-action-card" style={{ padding: '14px 20px', flexDirection: 'row', gap: '10px' }}>
-            🔔 Send Notification
-          </a>
-        </div>
-      </Box>
+      
     </div>
   );
 };
