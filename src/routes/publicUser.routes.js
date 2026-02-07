@@ -84,7 +84,11 @@ export function publicUserRoutes(router) {
         addDonationRequest
       );
       rootRouter.get('/request/', getAllDonationRequests);
-      rootRouter.put('/update-donation/:id', updateDonationRequest);
+      rootRouter.put(
+        '/update-donation/:id',
+        upload.array('proofImages'),
+        updateDonationRequest
+      );
       rootRouter.delete('/delete/:id', deletedDonationRequest);
     },
     router

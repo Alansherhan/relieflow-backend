@@ -179,7 +179,7 @@ export const updateDonationRequest = async (req, res) => {
     const { id } = req.params;
     const userId = req.user?._id || req.user?.id;
 
-    const {
+    let {
       title,
       description,
       donationType,
@@ -190,7 +190,28 @@ export const updateDonationRequest = async (req, res) => {
       address,
       location,
       deadline,
+      existingProofImages,
     } = req.body;
+
+    // Parse JSON strings if necessary (Flutter MultipartRequest sends complex objects as strings)
+    try {
+      if (typeof itemDetails === 'string')
+        itemDetails = JSON.parse(itemDetails);
+      if (typeof location === 'string') location = JSON.parse(location);
+      if (typeof address === 'string') address = JSON.parse(address);
+      if (typeof existingProofImages === 'string')
+        existingProofImages = JSON.parse(existingProofImages);
+    } catch (e) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid JSON format for complex fields',
+      });
+    }
+
+    // Handle new uploaded files
+    const newProofImages = req.files
+      ? req.files.map((file) => `/uploads/${file.filename}`)
+      : [];
 
     if (!id) {
       return res.status(403).json({
@@ -243,6 +264,15 @@ export const updateDonationRequest = async (req, res) => {
     if (address !== undefined) data.address = address;
     if (location !== undefined) data.location = location;
     if (deadline !== undefined) data.deadline = deadline;
+
+    // Handle proof images - combine existing (not removed) + new
+    if (existingProofImages !== undefined || newProofImages.length > 0) {
+      const finalImages = [
+        ...(Array.isArray(existingProofImages) ? existingProofImages : []),
+        ...newProofImages,
+      ];
+      data.proofImages = finalImages;
+    }
 
     await data.save();
     console.log('Data Updated Successfully', data);
