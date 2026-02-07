@@ -144,13 +144,13 @@ const disasterTips = [
     videos: [
       {
         title: 'Flood Evacuation Safety',
-        url: 'https://www.youtube.com/watch?v=example1',
-        duration: '2:45',
+        url: 'https://youtu.be/43M5mZuzHF8',
+        duration: '4:08',
       },
       {
         title: 'Building Emergency Kit',
-        url: 'https://www.youtube.com/watch?v=example2',
-        duration: '3:20',
+        url: 'https://youtu.be/UmiGvOha7As',
+        duration: '3:33',
       },
     ],
     emergencyContacts: [
@@ -270,8 +270,8 @@ const disasterTips = [
     videos: [
       {
         title: 'Drop, Cover, Hold On',
-        url: 'https://www.youtube.com/watch?v=example3',
-        duration: '1:30',
+        url: 'https://youtu.be/BLEPakj1YTY',
+        duration: '3:37',
       },
     ],
     emergencyContacts: [
@@ -393,12 +393,12 @@ const disasterTips = [
     videos: [
       {
         title: 'Stop, Drop & Roll',
-        url: 'https://www.youtube.com/watch?v=example4',
-        duration: '0:45',
+        url: 'https://youtu.be/KPfT2O358pE',
+        duration: '1:39',
       },
       {
         title: 'Fire Extinguisher Use',
-        url: 'https://www.youtube.com/watch?v=example5',
+        url: 'https://youtu.be/PQV71INDaqY',
         duration: '2:10',
       },
     ],
@@ -509,8 +509,8 @@ const disasterTips = [
     videos: [
       {
         title: 'Cyclone Safety Guide',
-        url: 'https://www.youtube.com/watch?v=example6',
-        duration: '3:15',
+        url: 'https://youtu.be/xHRbnuB9F1I',
+        duration: '2:45',
       },
     ],
     emergencyContacts: [
@@ -614,8 +614,8 @@ const disasterTips = [
     videos: [
       {
         title: 'Landslide Warning Signs',
-        url: 'https://www.youtube.com/watch?v=example7',
-        duration: '2:20',
+        url: 'https://youtu.be/VcgoZlpn1Y4',
+        duration: '2:26',
       },
     ],
     emergencyContacts: [
@@ -698,13 +698,13 @@ const disasterTips = [
     videos: [
       {
         title: 'CPR Training',
-        url: 'https://www.youtube.com/watch?v=example8',
-        duration: '4:30',
+        url: 'https://youtu.be/hizBdM1Ob68',
+        duration: '4:02',
       },
       {
         title: 'Heimlich Maneuver',
-        url: 'https://www.youtube.com/watch?v=example9',
-        duration: '1:45',
+        url: 'https://youtu.be/PV2LVz-ol-E',
+        duration: '2:38',
       },
     ],
     emergencyContacts: [
