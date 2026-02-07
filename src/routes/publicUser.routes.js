@@ -18,6 +18,8 @@ import {
 import {
   addAidRequest,
   getMyAidRequests,
+  updateAidRequestByUser,
+  deleteAidRequestByUser,
 } from '../controllers/aidRequestController.js';
 import { getAllReliefCenters } from '../controllers/reliefCenterController.js';
 import { protect } from '../middleWare/authMiddleware.js';
@@ -143,6 +145,12 @@ export function publicUserRoutes(router) {
         addAidRequest
       );
       rootRouter.get('/request/', getMyAidRequests);
+      rootRouter.put(
+        '/request/:id',
+        upload.single('image'),
+        updateAidRequestByUser
+      );
+      rootRouter.delete('/request/:id', deleteAidRequestByUser);
     },
     router
   );

@@ -92,6 +92,11 @@ const donationRequestSchema = new mongoose.Schema(
         ref: 'PortalDonation',
       },
     ],
+    // Track if admin has viewed this request
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

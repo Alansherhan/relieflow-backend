@@ -220,6 +220,18 @@ export const AidRequestResource = {
             '[DEBUG HOOK] show.after - errors after cleanup:',
             JSON.stringify(response.record?.errors || {})
           );
+
+          // Mark request as read when admin views it
+          try {
+            const recordId = response.record?.id || context.record?.id();
+            if (recordId) {
+              await AidRequest.findByIdAndUpdate(recordId, { isRead: true });
+              console.log(`[AdminJS] Marked AidRequest ${recordId} as read`);
+            }
+          } catch (err) {
+            console.error('[AdminJS] Error marking AidRequest as read:', err);
+          }
+
           return response;
         },
       },
@@ -685,6 +697,28 @@ export const DonationRequestResource = {
       'location.coordinates': { isVisible: false },
     },
     actions: {
+      // Mark donation request as read when admin views it
+      show: {
+        after: async (response, request, context) => {
+          try {
+            const recordId = response.record?.id || context.record?.id();
+            if (recordId) {
+              await DonationRequest.findByIdAndUpdate(recordId, {
+                isRead: true,
+              });
+              console.log(
+                `[AdminJS] Marked DonationRequest ${recordId} as read`
+              );
+            }
+          } catch (err) {
+            console.error(
+              '[AdminJS] Error marking DonationRequest as read:',
+              err
+            );
+          }
+          return response;
+        },
+      },
       // Add notification on status change
       edit: {
         after: async (response, request, context) => {

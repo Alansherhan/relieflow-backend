@@ -177,8 +177,20 @@ export const getAllDonationRequests = async (req, res) => {
 export const updateDonationRequest = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?._id || req.user?.id;
 
-    const { requestedBy, donationType, amount, itemDetails } = req.body;
+    const {
+      title,
+      description,
+      donationType,
+      amount,
+      itemDetails,
+      priority,
+      upiNumber,
+      address,
+      location,
+      deadline,
+    } = req.body;
 
     if (!id) {
       return res.status(403).json({
@@ -195,16 +207,49 @@ export const updateDonationRequest = async (req, res) => {
         message: 'Data not available',
       });
     }
-    data.requestedBy = requestedBy;
-    data.donationType = donationType;
-    data.amount = amount;
-    data.itemDetails = itemDetails;
+
+    // Check ownership
+    if (data.requestedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only edit your own requests',
+      });
+    }
+
+    // Check if request is still pending
+    if (data.status !== 'pending') {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only edit pending requests',
+      });
+    }
+
+    // Check if admin has already viewed this request
+    if (data.isRead === true) {
+      return res.status(403).json({
+        success: false,
+        message: 'This request has been viewed by admin and cannot be edited',
+      });
+    }
+
+    // Update allowed fields
+    if (title !== undefined) data.title = title;
+    if (description !== undefined) data.description = description;
+    if (donationType !== undefined) data.donationType = donationType;
+    if (amount !== undefined) data.amount = amount;
+    if (itemDetails !== undefined) data.itemDetails = itemDetails;
+    if (priority !== undefined) data.priority = priority;
+    if (upiNumber !== undefined) data.upiNumber = upiNumber;
+    if (address !== undefined) data.address = address;
+    if (location !== undefined) data.location = location;
+    if (deadline !== undefined) data.deadline = deadline;
 
     await data.save();
     console.log('Data Updated Successfully', data);
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: 'Data Updated Successfully',
+      data: data,
     });
   } catch (error) {
     console.log(error);
@@ -217,6 +262,7 @@ export const updateDonationRequest = async (req, res) => {
 
 export const deletedDonationRequest = async (req, res) => {
   const { id } = req.params;
+  const userId = req.user?._id || req.user?.id;
 
   try {
     if (!id) {
@@ -229,14 +275,39 @@ export const deletedDonationRequest = async (req, res) => {
     if (!deletedDonationRequest) {
       return res.status(404).json({
         success: false,
-        message: 'Database is empty',
+        message: 'Donation request not found',
       });
     }
+
+    // Check ownership
+    if (deletedDonationRequest.requestedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own requests',
+      });
+    }
+
+    // Check if request is still pending
+    if (deletedDonationRequest.status !== 'pending') {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete pending requests',
+      });
+    }
+
+    // Check if admin has already viewed this request
+    if (deletedDonationRequest.isRead === true) {
+      return res.status(403).json({
+        success: false,
+        message: 'This request has been viewed by admin and cannot be deleted',
+      });
+    }
+
     await deletedDonationRequest.deleteOne();
     console.log(deletedDonationRequest);
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: 'Deleted Sucessfully',
+      message: 'Deleted Successfully',
     });
   } catch (error) {
     console.log(error);

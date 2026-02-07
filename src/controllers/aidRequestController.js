@@ -206,4 +206,146 @@ export const getMyAidRequests = async (req, res) => {
   }
 };
 
+// Update aid request by the logged-in public user
+export const updateAidRequestByUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?._id || req.user?.id;
+
+    const { calamityType, address, location, description } = req.body;
+    // Handle image from file upload or body
+    const imageUrl = req.file
+      ? `/uploads/${req.file.filename}`
+      : req.body.imageUrl;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID is required',
+      });
+    }
+
+    const aidRequest = await AidRequest.findById(id);
+
+    if (!aidRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Aid request not found',
+      });
+    }
+
+    // Check ownership
+    if (aidRequest.aidRequestedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only edit your own requests',
+      });
+    }
+
+    // Check if request is still pending
+    if (aidRequest.status !== 'pending') {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only edit pending requests',
+      });
+    }
+
+    // Check if admin has already viewed this request
+    if (aidRequest.isRead === true) {
+      return res.status(403).json({
+        success: false,
+        message: 'This request has been viewed by admin and cannot be edited',
+      });
+    }
+
+    // Update allowed fields
+    if (calamityType !== undefined) aidRequest.calamityType = calamityType;
+    if (address !== undefined) aidRequest.address = address;
+    if (location !== undefined) aidRequest.location = location;
+    if (description !== undefined) aidRequest.description = description;
+    if (imageUrl !== undefined) aidRequest.imageUrl = imageUrl;
+
+    await aidRequest.save();
+
+    const populatedAidData = await aidRequest.populate([
+      'calamityType',
+      'aidRequestedBy',
+    ]);
+
+    console.log('Aid Request Updated Successfully', populatedAidData);
+    return res.status(200).json({
+      success: true,
+      message: 'Aid request updated successfully',
+      data: populatedAidData,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to update aid request',
+    });
+  }
+};
+
+// Delete aid request by the logged-in public user
+export const deleteAidRequestByUser = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user?._id || req.user?.id;
+
+  try {
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID is required',
+      });
+    }
+
+    const aidRequest = await AidRequest.findById(id);
+
+    if (!aidRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Aid request not found',
+      });
+    }
+
+    // Check ownership
+    if (aidRequest.aidRequestedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own requests',
+      });
+    }
+
+    // Check if request is still pending
+    if (aidRequest.status !== 'pending') {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete pending requests',
+      });
+    }
+
+    // Check if admin has already viewed this request
+    if (aidRequest.isRead === true) {
+      return res.status(403).json({
+        success: false,
+        message: 'This request has been viewed by admin and cannot be deleted',
+      });
+    }
+
+    await aidRequest.deleteOne();
+    console.log('Aid Request Deleted:', aidRequest._id);
+    return res.status(200).json({
+      success: true,
+      message: 'Aid request deleted successfully',
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to delete aid request',
+    });
+  }
+};
+
 // export const update
