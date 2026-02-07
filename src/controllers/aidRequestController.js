@@ -25,13 +25,25 @@ export const getAidRequest = async (req, res) => {
 export const addAidRequest = async (req, res) => {
   // const {calamityType , location , imageUrl ,aidRequestedBy} = req.body
   const calamityType = req.body.calamityType;
-  const address = req.body.address;
+
+  // Parse address if it's a JSON string (from some clients), otherwise use as-is
+  const address =
+    typeof req.body.address === 'string'
+      ? JSON.parse(req.body.address)
+      : req.body.address;
+
   // Get imageUrl from uploaded file or from body
   const imageUrl = req.file
     ? `/uploads/${req.file.filename}`
     : req.body.imageUrl;
   const description = req.body.description;
-  const location = req.body.location;
+
+  // Parse location if it's a JSON string
+  const location =
+    typeof req.body.location === 'string'
+      ? JSON.parse(req.body.location)
+      : req.body.location;
+
   // Get user ID from authenticated user (set by protect middleware)
   const aidRequestedBy = req.user?._id || req.user?.id;
 
@@ -212,7 +224,20 @@ export const updateAidRequestByUser = async (req, res) => {
     const { id } = req.params;
     const userId = req.user?._id || req.user?.id;
 
-    const { calamityType, address, location, description } = req.body;
+    const { calamityType, description, priority } = req.body;
+
+    // Parse JSON strings from multipart/form-data
+    const address = req.body.address
+      ? typeof req.body.address === 'string'
+        ? JSON.parse(req.body.address)
+        : req.body.address
+      : undefined;
+    const location = req.body.location
+      ? typeof req.body.location === 'string'
+        ? JSON.parse(req.body.location)
+        : req.body.location
+      : undefined;
+
     // Handle image from file upload or body
     const imageUrl = req.file
       ? `/uploads/${req.file.filename}`
@@ -264,6 +289,7 @@ export const updateAidRequestByUser = async (req, res) => {
     if (location !== undefined) aidRequest.location = location;
     if (description !== undefined) aidRequest.description = description;
     if (imageUrl !== undefined) aidRequest.imageUrl = imageUrl;
+    if (priority !== undefined) aidRequest.priority = priority;
 
     await aidRequest.save();
 
