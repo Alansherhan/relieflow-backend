@@ -14,7 +14,7 @@ import readline from 'readline';
 
 // Models
 import CalamityType from './models/CalamityType.js';
-import AdminUser from './models/AdminUser.js';
+import AdminUser from './models/adminUser.js';
 import AdminWallet from './models/AdminWallet.js';
 import ReliefCenter from './models/ReliefCenter.js';
 import DisasterTip from './models/disasterTip.js';
