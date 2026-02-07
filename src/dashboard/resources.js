@@ -334,6 +334,24 @@ export const AidRequestResource = {
                 try {
                   let notificationTitle, notificationBody, notificationType;
 
+                  // Fetch calamity type name for more descriptive notifications
+                  let calamityName = 'aid';
+                  try {
+                    const calamityTypeId = record.params?.calamityType;
+                    if (calamityTypeId) {
+                      const calamityType =
+                        await CalamityType.findById(calamityTypeId);
+                      if (calamityType) {
+                        calamityName = calamityType.calamityName;
+                      }
+                    }
+                  } catch (err) {
+                    console.error(
+                      '[AdminJS] Error fetching calamity type:',
+                      err
+                    );
+                  }
+
                   if (newStatus === 'rejected') {
                     notificationTitle = 'Aid Request Update';
                     notificationBody =
@@ -341,8 +359,7 @@ export const AidRequestResource = {
                     notificationType = 'aid_request_rejected';
                   } else if (newStatus === 'completed') {
                     notificationTitle = 'Aid Request Completed';
-                    notificationBody =
-                      'Great news! Your aid request has been successfully completed.';
+                    notificationBody = `Your ${calamityName} request has been completed.`;
                     notificationType = 'aid_request_completed';
                   } else if (newStatus === 'accepted') {
                     notificationTitle = 'Aid Request Accepted';
@@ -737,6 +754,10 @@ export const DonationRequestResource = {
                 try {
                   let notificationTitle, notificationBody, notificationType;
 
+                  // Get the title for more descriptive notifications
+                  const requestTitle =
+                    context.record?.params?.title || 'donation';
+
                   if (newStatus === 'accepted') {
                     notificationTitle = 'Donation Request Approved';
                     notificationBody =
@@ -749,8 +770,7 @@ export const DonationRequestResource = {
                     notificationType = 'donation_request_rejected';
                   } else if (newStatus === 'completed') {
                     notificationTitle = 'Donation Request Fulfilled';
-                    notificationBody =
-                      'Great news! Your donation request has been fully fulfilled.';
+                    notificationBody = `Your donation request "${requestTitle}" has been completed.`;
                     notificationType = 'donation_request_completed';
                   }
 

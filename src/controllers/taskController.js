@@ -377,22 +377,46 @@ export const updateTaskStatus = async (req, res) => {
       try {
         const populatedTask = await TaskSchema.findById(id)
           .populate('aidRequest')
-          .populate('donationRequest');
+          .populate('donationRequest')
+          .populate({
+            path: 'aidRequest',
+            populate: { path: 'calamityType', select: 'calamityName' },
+          });
 
         const requesterId =
           populatedTask.aidRequest?.aidRequestedBy ||
           populatedTask.donationRequest?.requestedBy;
         if (requesterId) {
-          const requestType =
-            task.taskType === 'aid'
-              ? 'aid_request_completed'
-              : 'donation_request_completed';
+          const isAidRequest = task.taskType === 'aid';
+          const requestType = isAidRequest
+            ? 'aid_request_completed'
+            : 'donation_request_completed';
+
+          // Build descriptive notification body
+          let notificationBody;
+          let notificationData = { taskId: task._id.toString() };
+
+          if (isAidRequest && populatedTask.aidRequest) {
+            const calamityName =
+              populatedTask.aidRequest.calamityType?.calamityName || 'aid';
+            notificationBody = `Your ${calamityName} request has been completed.`;
+            notificationData.aidRequestId =
+              populatedTask.aidRequest._id.toString();
+          } else if (populatedTask.donationRequest) {
+            const title = populatedTask.donationRequest.title || 'donation';
+            notificationBody = `Your donation request "${title}" has been completed.`;
+            notificationData.donationRequestId =
+              populatedTask.donationRequest._id.toString();
+          } else {
+            notificationBody = 'Your request has been completed.';
+          }
+
           await Notification.create({
             title: 'Request Completed',
-            body: 'Great news! Your request has been successfully completed.',
+            body: notificationBody,
             recipientId: requesterId,
             type: requestType,
-            data: { taskId: task._id.toString() },
+            data: notificationData,
           });
           console.log(
             `[updateTaskStatus] Completion notification sent to requester ${requesterId}`
@@ -503,22 +527,46 @@ export const completeTaskWithProof = async (req, res) => {
     try {
       const populatedTask = await TaskSchema.findById(id)
         .populate('aidRequest')
-        .populate('donationRequest');
+        .populate('donationRequest')
+        .populate({
+          path: 'aidRequest',
+          populate: { path: 'calamityType', select: 'calamityName' },
+        });
 
       const requesterId =
         populatedTask.aidRequest?.aidRequestedBy ||
         populatedTask.donationRequest?.requestedBy;
       if (requesterId) {
-        const requestType =
-          task.taskType === 'aid'
-            ? 'aid_request_completed'
-            : 'donation_request_completed';
+        const isAidRequest = task.taskType === 'aid';
+        const requestType = isAidRequest
+          ? 'aid_request_completed'
+          : 'donation_request_completed';
+
+        // Build descriptive notification body
+        let notificationBody;
+        let notificationData = { taskId: task._id.toString() };
+
+        if (isAidRequest && populatedTask.aidRequest) {
+          const calamityName =
+            populatedTask.aidRequest.calamityType?.calamityName || 'aid';
+          notificationBody = `Your ${calamityName} request has been completed.`;
+          notificationData.aidRequestId =
+            populatedTask.aidRequest._id.toString();
+        } else if (populatedTask.donationRequest) {
+          const title = populatedTask.donationRequest.title || 'donation';
+          notificationBody = `Your donation request "${title}" has been completed.`;
+          notificationData.donationRequestId =
+            populatedTask.donationRequest._id.toString();
+        } else {
+          notificationBody = 'Your request has been completed.';
+        }
+
         await Notification.create({
           title: 'Request Completed',
-          body: 'Great news! Your request has been successfully completed.',
+          body: notificationBody,
           recipientId: requesterId,
           type: requestType,
-          data: { taskId: task._id.toString() },
+          data: notificationData,
         });
         console.log(
           `[completeTaskWithProof] Completion notification sent to requester ${requesterId}`
