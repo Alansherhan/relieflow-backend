@@ -40,13 +40,14 @@ import {
   componentLoader,
   Components,
 } from './src/dashboard/components/components.js';
-
+  
 dotenv.config();
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/images', express.static(path.join(__dirname, 'assets/images')));
 
 // CORS configuration for donation portal
 app.use(
@@ -66,6 +67,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use('/images', express.static(path.join(__dirname, 'assets/images')));
 
 // Request logging middleware - DEBUG
 app.use((req, res, next) => {
@@ -111,8 +113,8 @@ const adminOptions = {
   componentLoader,
 
   branding: {
-    companyName: 'Relief Management System',
-    logo: '/images/logo.png',
+    companyName: 'RelieFlow',
+    logo: '/images/logo3.png',
     withMadeWithLove: false,
     softwareBrothers: false,
     favicon: '/images/favicon.ico',
@@ -126,6 +128,13 @@ const adminOptions = {
         info: '#06b6d4',
       },
       font: 'Inter, sans-serif',
+      sidebar: {
+        width: 260,
+      },
+      logo: {
+        maxWidth: 60,
+        maxHeight: 60,
+      },
     },
   },
 
@@ -229,6 +238,7 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
     name: 'adminjs-session',
   }
 );
+
 
 // Mount admin router
 app.use(adminJS.options.rootPath, adminRouter);

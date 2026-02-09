@@ -228,7 +228,7 @@ const Dashboard = () => {
 
       {/* Stats Cards Row */}
       <div className="stat-cards-row">
-        <div className="stat-card">
+        <a href="/dashboard/resources/TaskSchema" className="stat-card stat-card-clickable">
           <div className="stat-card-title">📋 Total Tasks</div>
           <div className="stat-card-value">{stats?.tasks?.total || 0}</div>
           <div className="stat-card-subtitle">
@@ -239,9 +239,9 @@ const Dashboard = () => {
             <span style={{ color: COLORS.cyan }}>{stats?.tasks?.assigned || 0}</span>
             {' assigned'}
           </div>
-        </div>
+        </a>
 
-        <div className="stat-card">
+        <a href="/dashboard/resources/AidRequest" className="stat-card stat-card-clickable">
           <div className="stat-card-title">🆘 Aid Requests</div>
           <div className="stat-card-value">{stats?.aidRequests?.total || 0}</div>
           <div className="stat-card-subtitle">
@@ -250,23 +250,23 @@ const Dashboard = () => {
             <span style={{ color: COLORS.green }}>{stats?.aidRequests?.completed || 0}</span>
             {' resolved'}
           </div>
-        </div>
+        </a>
 
-        <div className="stat-card">
+        <a href="/dashboard/resources/DonationRequest" className="stat-card stat-card-clickable">
           <div className="stat-card-title">💰 Donation Requests</div>
           <div className="stat-card-value">{stats?.donationRequests?.total || 0}</div>
           <div className="stat-card-subtitle">
             Total amount: {formatCurrency(stats?.donationRequests?.totalAmount || 0)}
           </div>
-        </div>
+        </a>
 
-        <div className="stat-card">
+        <a href="/dashboard/resources/userProfile" className="stat-card stat-card-clickable">
           <div className="stat-card-title">👥 Volunteers</div>
           <div className="stat-card-value">{stats?.users?.volunteers || 0}</div>
           <div className="stat-card-subtitle">
             {stats?.users?.total || 0} total registered users
           </div>
-        </div>
+        </a>
       </div>
       <Box mt="xl">
         <H5 mb="lg">Quick Actions</H5>
