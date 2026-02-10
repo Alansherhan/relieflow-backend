@@ -334,7 +334,7 @@ export const AidRequestResource = {
                 try {
                   let notificationTitle, notificationBody, notificationType;
 
-                  // Fetch calamity type name for more descriptive notifications
+                  // Fech calamity type name for more descriptive notifications
                   let calamityName = 'aid';
                   try {
                     const calamityTypeId = record.params?.calamityType;

@@ -234,10 +234,14 @@ const Dashboard = () => {
           <div className="stat-card-subtitle">
             <span style={{ color: COLORS.green }}>✓ {stats?.tasks?.completed || 0}</span>
             {' completed • '}
-            <span style={{ color: COLORS.cyan }}>{stats?.tasks?.open || 0}</span>
+            <span style={{ color: COLORS.cyan }}>✓ {stats?.tasks?.open || 0}</span>
             {' open  • '}
-            <span style={{ color: COLORS.cyan }}>{stats?.tasks?.assigned || 0}</span>
-            {' assigned'}
+            <span style={{ color: COLORS.cyan }}>✓ {stats?.tasks?.assigned || 0}</span>
+            {' assigned • '}
+            <span style={{ color: COLORS.orange }}>✓ {stats?.tasks?.accepted || 0}</span>
+            {' accepted • '}
+            <span style={{ color: COLORS.orange }}>✓ {stats?.tasks?.rejected || 0}</span>
+            {' rejected • '}
           </div>
         </a>
 
