@@ -123,7 +123,12 @@ export const getPublicDonationRequestById = async (req, res) => {
         donor: userId,
         donationRequest: id,
         status: {
-          $in: ['pending_payment', 'pending_delivery', 'awaiting_volunteer', 'pickup_scheduled'],
+          $in: [
+            'pending_payment',
+            'pending_delivery',
+            'awaiting_volunteer',
+            'pickup_scheduled',
+          ],
         },
       }).lean();
     }
