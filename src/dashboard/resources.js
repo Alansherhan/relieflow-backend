@@ -13,6 +13,7 @@ import disasterTip from '../models/disasterTip.js';
 import Notification from '../models/Notification.js';
 import PortalDonation from '../models/PortalDonation.js';
 import AdminWallet from '../models/AdminWallet.js';
+
 // FCM is now sent automatically via Notification model post-save hook
 
 export const AdminResource = {
@@ -971,6 +972,7 @@ export const ReliefCenterResource = {
       'address.location.type': { isVisible: false },
       'address.location.coordinates': { isVisible: false },
     },
+
     actions: {
       new: {
         handler: async (request, response, context) => {

@@ -95,7 +95,7 @@ export const login = async (req, res) => {
     });
 
     const errorResponse = {
-      message: 'Unauthorized',
+      // message: 'Unauthorized',
       success: false,
     };
 

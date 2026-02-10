@@ -14,14 +14,15 @@ const aidRequestSchema = new mongoose.Schema(
     },
     location: {
       type: locationSchema,
+      required: true,
     },
     imageUrl: {
       type: String,
-      required: false,
+      required: true,
     },
     description: {
       type: String,
-      required: false,
+      required: true,
     },
     status: {
       type: String,
