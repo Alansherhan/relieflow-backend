@@ -82,6 +82,39 @@ export const getPublicDonationRequestById = async (req, res) => {
       });
     }
 
+    // Check for active pickups (volunteer assigned) for this request
+    let activePickupInfo = null;
+    const activePickups = await PortalDonation.find({
+      donationRequest: id,
+      status: { $in: ['pickup_scheduled', 'awaiting_volunteer'] },
+    })
+      .populate('pickupTask')
+      .lean();
+
+    if (activePickups.length > 0) {
+      // Find if any pickup has a volunteer assigned
+      const pickupWithVolunteer = activePickups.find(
+        (p) => p.status === 'pickup_scheduled'
+      );
+      if (pickupWithVolunteer && pickupWithVolunteer.pickupTask) {
+        const Task = (await import('../models/Task.js')).default;
+        const task = await Task.findById(pickupWithVolunteer.pickupTask)
+          .populate('assignedVolunteers', 'name phoneNumber')
+          .lean();
+        if (task && task.assignedVolunteers?.length > 0) {
+          activePickupInfo = {
+            volunteerName: task.assignedVolunteers[0].name,
+            volunteerPhone: task.assignedVolunteers[0].phoneNumber,
+            status: 'pickup_scheduled',
+          };
+        }
+      } else if (activePickups.some((p) => p.status === 'awaiting_volunteer')) {
+        activePickupInfo = {
+          status: 'awaiting_volunteer',
+        };
+      }
+    }
+
     // If user is authenticated, check for their active donation on this request
     let myActiveDonation = null;
     if (req.user) {
@@ -90,7 +123,7 @@ export const getPublicDonationRequestById = async (req, res) => {
         donor: userId,
         donationRequest: id,
         status: {
-          $in: ['pending_payment', 'pending_delivery', 'awaiting_volunteer'],
+          $in: ['pending_payment', 'pending_delivery', 'awaiting_volunteer', 'pickup_scheduled'],
         },
       }).lean();
     }
@@ -99,6 +132,7 @@ export const getPublicDonationRequestById = async (req, res) => {
       success: true,
       data: request,
       myActiveDonation, // null if not authenticated or no active donation
+      activePickupInfo, // null if no active pickup, or { status, volunteerName?, volunteerPhone? }
     });
   } catch (error) {
     console.error('Error fetching donation request:', error);
