@@ -58,6 +58,13 @@ export const addAidRequest = async (req, res) => {
     });
   }
 
+  if (!imageUrl) {
+    return res.status(400).json({
+      success: false,
+      errors: [{ field: 'imageUrl', message: 'Please insert an image' }],
+    });
+  }
+
   try {
     const aidCreated = await AidRequest.create({
       calamityType: calamityType,
