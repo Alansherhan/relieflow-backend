@@ -806,45 +806,11 @@ export const requestPickup = async (req, res) => {
     portalDonation.status = 'awaiting_volunteer';
     await portalDonation.save();
 
-    // Update fulfilled quantities on the DonationRequest
-    if (
-      portalDonation.donationRequest &&
-      donatedItems &&
-      donatedItems.length > 0
-    ) {
-      const donationRequest = await DonationRequest.findById(
-        portalDonation.donationRequest
-      );
-      if (donationRequest && donationRequest.itemDetails) {
-        // Update fulfilled quantities for each donated item
-        donatedItems.forEach((donatedItem) => {
-          const requestItem = donationRequest.itemDetails.find(
-            (ri) => ri.category === donatedItem.category
-          );
-          if (requestItem) {
-            requestItem.fulfilledQuantity =
-              (requestItem.fulfilledQuantity || 0) +
-              (donatedItem.quantity || 0);
-          }
-        });
-
-        // Check if all items are fully fulfilled
-        const allFulfilled = donationRequest.itemDetails.every(
-          (item) => (item.fulfilledQuantity || 0) >= item.quantity
-        );
-        const partiallyFulfilled = donationRequest.itemDetails.some(
-          (item) => (item.fulfilledQuantity || 0) > 0
-        );
-
-        if (allFulfilled) {
-          donationRequest.status = 'completed';
-        } else if (partiallyFulfilled) {
-          donationRequest.status = 'partially_fulfilled';
-        }
-
-        await donationRequest.save();
-      }
-    }
+    // NOTE: Do NOT update fulfilled quantities here.
+    // Fulfillment is only updated when the donation is actually delivered
+    // (in completeTaskWithProof when the volunteer completes the pickup).
+    // Updating here would cause double-counting since completeTaskWithProof
+    // also increments fulfilledQuantity.
 
     // START FCM: Notify Donor and Broadcast to Volunteers
     // NOTE: FCM is now sent automatically via Notification model post-save hook
