@@ -105,6 +105,8 @@ const NotificationForm = (props) => {
         const newErrors = {};
         if (!record.params.title?.trim()) {
             newErrors.title = 'Title is required';
+        } else if (!/^[A-Za-z\s!.,:\-]+$/.test(record.params.title.trim())) {
+            newErrors.title = 'Title must contain only letters, spaces, and basic punctuation (no numbers)';
         }
         if (!record.params.body?.trim()) {
             newErrors.body = 'Message is required';

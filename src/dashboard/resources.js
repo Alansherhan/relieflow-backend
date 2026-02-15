@@ -993,6 +993,38 @@ export const ReliefCenterResource = {
 
           const updateData = parseReliefCenterPayload(payload);
 
+          // Validate shelter name: letters and spaces only
+          if (updateData.shelterName && !/^[A-Za-z\s]+$/.test(updateData.shelterName)) {
+            return {
+              record: { params: payload, errors: { shelterName: { message: 'Shelter name must contain only letters and spaces (no numbers or special characters)' } } },
+              notice: { message: 'Shelter name must contain only letters and spaces', type: 'error' },
+            };
+          }
+          // Validate coordinator name: letters and spaces only
+          if (updateData.coordinatorName && !/^[A-Za-z\s]+$/.test(updateData.coordinatorName)) {
+            return {
+              record: { params: payload, errors: { coordinatorName: { message: 'Coordinator name must contain only letters and spaces (no numbers or special characters)' } } },
+              notice: { message: 'Coordinator name must contain only letters and spaces', type: 'error' },
+            };
+          }
+          // Validate coordinator number: digits only, max 10
+          if (updateData.coordinatorNumber && !/^\d{1,10}$/.test(updateData.coordinatorNumber)) {
+            return {
+              record: { params: payload, errors: { coordinatorNumber: { message: 'Coordinator number must contain only digits (max 10)' } } },
+              notice: { message: 'Invalid coordinator number', type: 'error' },
+            };
+          }
+          // Validate pinCode: must be a valid integer if provided
+          if (updateData.address?.pinCode !== undefined && updateData.address.pinCode !== '') {
+            const pinCode = Number(updateData.address.pinCode);
+            if (isNaN(pinCode) || !Number.isInteger(pinCode)) {
+              return {
+                record: { params: payload, errors: { 'address.pinCode': { message: 'PIN code must be a valid integer' } } },
+                notice: { message: 'PIN code must be a valid integer', type: 'error' },
+              };
+            }
+          }
+
           console.log(
             '[DEBUG HANDLER] ReliefCenter create data:',
             JSON.stringify(updateData, null, 2)
@@ -1043,6 +1075,38 @@ export const ReliefCenterResource = {
           );
 
           const updateData = parseReliefCenterPayload(payload);
+
+          // Validate shelter name: letters and spaces only
+          if (updateData.shelterName && !/^[A-Za-z\s]+$/.test(updateData.shelterName)) {
+            return {
+              record: record.toJSON(currentAdmin),
+              notice: { message: 'Shelter name must contain only letters and spaces (no numbers or special characters)', type: 'error' },
+            };
+          }
+          // Validate coordinator name: letters and spaces only
+          if (updateData.coordinatorName && !/^[A-Za-z\s]+$/.test(updateData.coordinatorName)) {
+            return {
+              record: record.toJSON(currentAdmin),
+              notice: { message: 'Coordinator name must contain only letters and spaces (no numbers or special characters)', type: 'error' },
+            };
+          }
+          // Validate coordinator number: digits only, max 10
+          if (updateData.coordinatorNumber && !/^\d{1,10}$/.test(updateData.coordinatorNumber)) {
+            return {
+              record: record.toJSON(currentAdmin),
+              notice: { message: 'Coordinator number must contain only digits (max 10)', type: 'error' },
+            };
+          }
+          // Validate pinCode: must be a valid integer if provided
+          if (updateData.address?.pinCode !== undefined && updateData.address.pinCode !== '') {
+            const pinCode = Number(updateData.address.pinCode);
+            if (isNaN(pinCode) || !Number.isInteger(pinCode)) {
+              return {
+                record: record.toJSON(currentAdmin),
+                notice: { message: 'PIN code must be a valid integer', type: 'error' },
+              };
+            }
+          }
 
           console.log(
             '[DEBUG HANDLER] ReliefCenter update data:',

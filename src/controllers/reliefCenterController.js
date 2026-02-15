@@ -8,10 +8,47 @@ export const addCenter = async (req, res) => {
   const coordinatorName = req.body.coordinatorName;
   const coordinatorNumber = req.body.coordinatorNumber;
 
-  if (coordinatorNumber.length > 10) {
-    return res.status(201).json({
-      message: 'Please enter a valid number !!!s',
+  // Validate shelter name: letters and spaces only
+  if (!/^[A-Za-z\s]+$/.test(shelterName)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Shelter name must contain only letters (no numbers or special characters)',
     });
+  }
+
+  // Validate coordinator name: letters and spaces only
+  if (!/^[A-Za-z\s]+$/.test(coordinatorName)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Coordinator name must contain only letters (no numbers or special characters)',
+    });
+  }
+
+  // Validate coordinator number: digits only, max 10
+  if (!/^\d{1,10}$/.test(coordinatorNumber)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Coordinator number must contain only digits (max 10)',
+    });
+  }
+
+  // Validate address fields if provided
+  if (addressModel) {
+    if (addressModel.addressLine1 && typeof addressModel.addressLine1 !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Address Line 1 must be a string',
+      });
+    }
+    if (addressModel.pinCode !== undefined && addressModel.pinCode !== null && addressModel.pinCode !== '') {
+      const pinCode = Number(addressModel.pinCode);
+      if (isNaN(pinCode) || !Number.isInteger(pinCode)) {
+        return res.status(400).json({
+          success: false,
+          message: 'PIN code must be a valid integer',
+        });
+      }
+    }
   }
 
   try {
@@ -114,6 +151,38 @@ export const updateReliefCenter=async (req,res)=>{
         success: false,
         message: 'id required',
       });
+    }
+
+    // Validate shelter name: letters and spaces only
+    if (shelterName && !/^[A-Za-z\s]+$/.test(shelterName)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Shelter name must contain only letters and spaces (no numbers or special characters)',
+      });
+    }
+    // Validate coordinator name: letters and spaces only
+    if (coordinatorName && !/^[A-Za-z\s]+$/.test(coordinatorName)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Coordinator name must contain only letters and spaces (no numbers or special characters)',
+      });
+    }
+    // Validate coordinator number: digits only, max 10
+    if (coordinatorNumber && !/^\d{1,10}$/.test(coordinatorNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Coordinator number must contain only digits (max 10)',
+      });
+    }
+    // Validate address pinCode if provided
+    if (address?.pinCode !== undefined && address.pinCode !== null && address.pinCode !== '') {
+      const pinCode = Number(address.pinCode);
+      if (isNaN(pinCode) || !Number.isInteger(pinCode)) {
+        return res.status(400).json({
+          success: false,
+          message: 'PIN code must be a valid integer',
+        });
+      }
     }
 
     const data=await ReliefCenter.findById(id);
