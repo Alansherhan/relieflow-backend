@@ -523,7 +523,8 @@ export const completeTaskWithProof = async (req, res) => {
       );
     }
 
-    // 2. Notify the public user
+    // 2. Notify the public user (for aid requests immediately; for donation requests after fulfillment check)
+    // For aid requests, send notification right away since there's no partial fulfillment concept
     try {
       const populatedTask = await TaskSchema.findById(id)
         .populate('aidRequest')
@@ -533,56 +534,33 @@ export const completeTaskWithProof = async (req, res) => {
           populate: { path: 'calamityType', select: 'calamityName' },
         });
 
+      const isAidRequest = task.taskType === 'aid';
       const requesterId =
         populatedTask.aidRequest?.aidRequestedBy ||
         populatedTask.donationRequest?.requestedBy;
-      if (requesterId) {
-        const isAidRequest = task.taskType === 'aid';
-        const requestType = isAidRequest
-          ? 'aid_request_completed'
-          : 'donation_request_completed';
 
-        // Build descriptive notification body
-        let notificationBody;
-        let notificationData = { taskId: task._id.toString() };
-
-        if (isAidRequest && populatedTask.aidRequest) {
-          const calamityName =
-            populatedTask.aidRequest.calamityType?.calamityName || 'aid';
-          notificationBody = `Your ${calamityName} request has been completed.`;
-          notificationData.aidRequestId =
-            populatedTask.aidRequest._id.toString();
-        } else if (populatedTask.donationRequest) {
-          const title = populatedTask.donationRequest.title || 'donation';
-          notificationBody = `Your donation request "${title}" has been completed.`;
-          notificationData.donationRequestId =
-            populatedTask.donationRequest._id.toString();
-        } else {
-          notificationBody = 'Your request has been completed.';
-        }
-
+      // For aid requests, notify immediately (no partial fulfillment concept)
+      if (isAidRequest && requesterId && populatedTask.aidRequest) {
+        const calamityName =
+          populatedTask.aidRequest.calamityType?.calamityName || 'aid';
         await Notification.create({
           title: 'Request Completed',
-          body: notificationBody,
+          body: `Your ${calamityName} request has been completed.`,
           recipientId: requesterId,
-          type: requestType,
-          data: notificationData,
+          type: 'aid_request_completed',
+          data: {
+            taskId: task._id.toString(),
+            aidRequestId: populatedTask.aidRequest._id.toString(),
+          },
         });
         console.log(
           `[completeTaskWithProof] Completion notification sent to requester ${requesterId}`
         );
       }
-    } catch (notifErr) {
-      console.error(
-        '[completeTaskWithProof] Error sending requester completion notification:',
-        notifErr
-      );
-    }
 
-    // Sync PortalDonation status for pickup tasks
-    // When volunteer completes a pickup task, update linked PortalDonation to completed
-    // and update the DonationRequest fulfillment quantities
-    try {
+      // Sync PortalDonation status for pickup tasks
+      // When volunteer completes a pickup task, update linked PortalDonation to completed
+      // and update the DonationRequest fulfillment quantities
       const portalDonation = await PortalDonation.findOne({
         pickupTask: task._id,
       });
@@ -632,12 +610,30 @@ export const completeTaskWithProof = async (req, res) => {
             console.log(
               `[completeTaskWithProof] Updated DonationRequest ${donationRequest._id} fulfillment`
             );
+
+            // Only notify the requester when the donation request is FULLY fulfilled
+            if (allFulfilled && requesterId) {
+              const title = donationRequest.title || 'donation';
+              await Notification.create({
+                title: 'Request Completed',
+                body: `Great news! Your donation request "${title}" has been fully fulfilled.`,
+                recipientId: requesterId,
+                type: 'donation_request_completed',
+                data: {
+                  taskId: task._id.toString(),
+                  donationRequestId: donationRequest._id.toString(),
+                },
+              });
+              console.log(
+                `[completeTaskWithProof] Completion notification sent to requester ${requesterId}`
+              );
+            }
           }
         }
       }
     } catch (error) {
       console.error(
-        '[completeTaskWithProof] Error syncing PortalDonation status:',
+        '[completeTaskWithProof] Error syncing PortalDonation status or sending requester notification:',
         error
       );
     }

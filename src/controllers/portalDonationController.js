@@ -646,6 +646,31 @@ export const submitItemDonation = async (req, res) => {
         console.log(
           `[submitItemDonation] Updated DonationRequest ${donationRequest._id} fulfillment`
         );
+
+        // Only notify the requester when the donation request is FULLY fulfilled
+        if (allFulfilled && donationRequest.requestedBy) {
+          try {
+            await Notification.create({
+              title: 'Donation Request Fulfilled!',
+              body: `Great news! Your donation request "${donationRequest.title || 'donation'}" has been fully fulfilled.`,
+              recipientId: donationRequest.requestedBy,
+              type: 'donation_request_completed',
+              targetUserType: 'public',
+              data: {
+                donationRequestId: donationRequest._id.toString(),
+                portalDonationId: portalDonation._id.toString(),
+              },
+            });
+            console.log(
+              `[submitItemDonation] Completion notification sent to requester ${donationRequest.requestedBy}`
+            );
+          } catch (notifErr) {
+            console.error(
+              '[submitItemDonation] Error sending requester completion notification:',
+              notifErr
+            );
+          }
+        }
       }
     }
 
