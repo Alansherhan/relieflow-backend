@@ -3,6 +3,37 @@
    Only affects the custom dashboard, not resource pages
    ============================================ */
 
+/* === Force default cursor on ALL non-interactive text in AdminJS === */
+body *,
+body *::before,
+body *::after,
+#app *,
+#app *::before,
+#app *::after {
+  cursor: default !important;
+}
+
+/* Restore pointer cursor for interactive/clickable elements */
+a,
+a *,
+button,
+button *,
+[role="button"],
+[role="button"] *,
+input,
+select,
+textarea,
+[data-css="sidebar-logo"],
+[data-css="sidebar-logo"] *,
+nav a,
+nav a *,
+.stat-card-clickable,
+.stat-card-clickable *,
+.quick-action-card,
+.quick-action-card * {
+  cursor: pointer !important;
+}
+
 /* === Google Fonts Import === */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
