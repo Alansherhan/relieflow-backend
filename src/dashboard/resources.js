@@ -423,6 +423,7 @@ export const AidRequestResource = {
         component: Components.CreateTaskFromAidRequest,
         icon: 'Plus',
         label: 'Create Task',
+        isAccessible: ({ record }) => record?.params?.status === 'accepted',
         handler: async (request, response, context) => {
           return {
             record: context.record.toJSON(context.currentAdmin),

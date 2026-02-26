@@ -611,21 +611,31 @@ export const completeTaskWithProof = async (req, res) => {
               `[completeTaskWithProof] Updated DonationRequest ${donationRequest._id} fulfillment`
             );
 
-            // Only notify the requester when the donation request is FULLY fulfilled
-            if (allFulfilled && requesterId) {
+            // Notify the requester for both partial and full fulfillment
+            if ((allFulfilled || partiallyFulfilled) && requesterId) {
               const title = donationRequest.title || 'donation';
+              const notificationType = allFulfilled
+                ? 'donation_request_completed'
+                : 'donation_request_partially_fulfilled';
+              const notificationTitle = allFulfilled
+                ? 'Request Completed'
+                : 'Items Received!';
+              const notificationBody = allFulfilled
+                ? `Great news! Your donation request "${title}" has been fully fulfilled.`
+                : `Some items have been donated to your request "${title}".`;
+
               await Notification.create({
-                title: 'Request Completed',
-                body: `Great news! Your donation request "${title}" has been fully fulfilled.`,
+                title: notificationTitle,
+                body: notificationBody,
                 recipientId: requesterId,
-                type: 'donation_request_completed',
+                type: notificationType,
                 data: {
                   taskId: task._id.toString(),
                   donationRequestId: donationRequest._id.toString(),
                 },
               });
               console.log(
-                `[completeTaskWithProof] Completion notification sent to requester ${requesterId}`
+                `[completeTaskWithProof] ${notificationType} notification sent to requester ${requesterId}`
               );
             }
           }
@@ -927,6 +937,14 @@ export const createTaskFromAidRequest = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Aid request not found',
+      });
+    }
+
+    // Ensure the aid request has been accepted before creating a task
+    if (aidRequest.status !== 'accepted') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot create a task for an aid request with status '${aidRequest.status}'. Only accepted aid requests can have tasks.`,
       });
     }
 

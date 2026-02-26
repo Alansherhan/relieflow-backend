@@ -263,7 +263,7 @@ const MapPicker = (props) => {
                 <Button onClick={handleSearch} type="button">Search</Button>
             </Box>
 
-            <Box height="400px" mb="default" border="default">
+            <Box height="400px" mb="default" border="default" style={{ position: 'relative', zIndex: 0 }}>
                 <div ref={mapContainerRef} style={{ height: '100%', width: '100%' }} />
             </Box>
 

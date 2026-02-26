@@ -647,14 +647,24 @@ export const submitItemDonation = async (req, res) => {
           `[submitItemDonation] Updated DonationRequest ${donationRequest._id} fulfillment`
         );
 
-        // Only notify the requester when the donation request is FULLY fulfilled
-        if (allFulfilled && donationRequest.requestedBy) {
+        // Notify the requester for both partial and full fulfillment
+        if ((allFulfilled || partiallyFulfilled) && donationRequest.requestedBy) {
           try {
+            const notificationType = allFulfilled
+              ? 'donation_request_completed'
+              : 'donation_request_partially_fulfilled';
+            const notificationTitle = allFulfilled
+              ? 'Donation Request Fulfilled!'
+              : 'Items Received!';
+            const notificationBody = allFulfilled
+              ? `Great news! Your donation request "${donationRequest.title || 'donation'}" has been fully fulfilled.`
+              : `Some items have been donated to your request "${donationRequest.title || 'donation'}".`;
+
             await Notification.create({
-              title: 'Donation Request Fulfilled!',
-              body: `Great news! Your donation request "${donationRequest.title || 'donation'}" has been fully fulfilled.`,
+              title: notificationTitle,
+              body: notificationBody,
               recipientId: donationRequest.requestedBy,
-              type: 'donation_request_completed',
+              type: notificationType,
               targetUserType: 'public',
               data: {
                 donationRequestId: donationRequest._id.toString(),
@@ -662,7 +672,7 @@ export const submitItemDonation = async (req, res) => {
               },
             });
             console.log(
-              `[submitItemDonation] Completion notification sent to requester ${donationRequest.requestedBy}`
+              `[submitItemDonation] ${notificationType} notification sent to requester ${donationRequest.requestedBy}`
             );
           } catch (notifErr) {
             console.error(
