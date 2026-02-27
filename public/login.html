@@ -298,6 +298,78 @@
           </button>
         </form>
 
+        <div id="forgot-password-link" class="footer" style="margin-top: 1rem; margin-bottom: 0.5rem;">
+          <span style="color: #2563eb; cursor: pointer; font-weight: 500;" onclick="showForgotPassword()">Forgot Password?</span>
+        </div>
+
+        <!-- Forgot Password Form (hidden by default) -->
+        <form id="forgot-password-form" style="display: none;">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.5rem; font-weight: bold; color: #111827; margin-bottom: 0.5rem;">Forgot Password</h2>
+            <p style="font-size: 1rem; color: #6b7280;">Enter your email address and we'll send you an OTP to reset your password.</p>
+          </div>
+
+          <div id="forgot-error-message" class="error-message">
+            ⚠️ <span id="forgot-error-text"></span>
+          </div>
+
+          <div id="forgot-success-message" class="error-message" style="background-color: #f0fdf4; border-color: #bbf7d0; display: none;">
+            ✅ <span id="forgot-success-text" style="color: #16a34a;"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="forgot-email">Email Address *</label>
+            <input type="email" id="forgot-email" name="email" placeholder="admin@example.com" required>
+          </div>
+
+          <button type="submit" class="submit-btn" id="forgot-submit-btn">
+            Send OTP
+          </button>
+
+          <div style="text-align: center; margin-top: 1rem;">
+            <span style="color: #2563eb; cursor: pointer; font-weight: 500; font-size: 0.875rem;" onclick="showLogin()">← Back to Sign In</span>
+          </div>
+        </form>
+
+        <!-- Reset Password Form (hidden by default) -->
+        <form id="reset-password-form" style="display: none;">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.5rem; font-weight: bold; color: #111827; margin-bottom: 0.5rem;">Reset Password</h2>
+            <p style="font-size: 1rem; color: #6b7280;">Enter the OTP and your new password.</p>
+          </div>
+
+          <div id="reset-error-message" class="error-message">
+            ⚠️ <span id="reset-error-text"></span>
+          </div>
+
+          <div id="reset-success-message" class="error-message" style="background-color: #f0fdf4; border-color: #bbf7d0; display: none;">
+            ✅ <span id="reset-success-text" style="color: #16a34a;"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="otp">OTP Code *</label>
+            <input type="text" id="otp" name="otp" placeholder="Enter 6-digit OTP" required maxlength="6" style="letter-spacing: 4px; text-align: center;">
+          </div>
+
+          <div class="form-group">
+            <label for="new-password">New Password *</label>
+            <div class="password-container">
+              <input type="password" id="new-password" name="newPassword" placeholder="Enter new password (min 6 characters)" required>
+              <button type="button" class="password-toggle" id="new-password-toggle">
+                👁️‍🗨️
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="reset-submit-btn">
+            Reset Password
+          </button>
+
+          <div style="text-align: center; margin-top: 1rem;">
+            <span style="color: #2563eb; cursor: pointer; font-weight: 500; font-size: 0.875rem;" onclick="showLogin()">← Back to Sign In</span>
+          </div>
+        </form>
+
         <div class="footer">
           Don't have an account? <strong style="color: #2563eb; cursor: pointer;">Contact Administrator</strong>
         </div>
@@ -317,6 +389,55 @@
     const passwordToggle = document.getElementById('password-toggle');
     const passwordInput = document.getElementById('password');
 
+    // Forgot/Reset password elements
+    const forgotForm = document.getElementById('forgot-password-form');
+    const forgotLink = document.getElementById('forgot-password-link');
+    const forgotSubmitBtn = document.getElementById('forgot-submit-btn');
+    const forgotErrorMessage = document.getElementById('forgot-error-message');
+    const forgotErrorText = document.getElementById('forgot-error-text');
+    const forgotSuccessMessage = document.getElementById('forgot-success-message');
+    const forgotSuccessText = document.getElementById('forgot-success-text');
+
+    const resetForm = document.getElementById('reset-password-form');
+    const resetSubmitBtn = document.getElementById('reset-submit-btn');
+    const resetErrorMessage = document.getElementById('reset-error-message');
+    const resetErrorText = document.getElementById('reset-error-text');
+    const resetSuccessMessage = document.getElementById('reset-success-message');
+    const resetSuccessText = document.getElementById('reset-success-text');
+    const newPasswordToggle = document.getElementById('new-password-toggle');
+    const newPasswordInput = document.getElementById('new-password');
+
+    let forgotEmailValue = '';
+
+    // View switching functions
+    function showForgotPassword() {
+      form.style.display = 'none';
+      forgotLink.style.display = 'none';
+      forgotForm.style.display = 'block';
+      resetForm.style.display = 'none';
+      errorMessage.classList.remove('show');
+      forgotErrorMessage.classList.remove('show');
+      forgotSuccessMessage.style.display = 'none';
+      document.getElementById('forgot-email').value = document.getElementById('email').value || '';
+    }
+
+    function showResetPassword() {
+      form.style.display = 'none';
+      forgotLink.style.display = 'none';
+      forgotForm.style.display = 'none';
+      resetForm.style.display = 'block';
+      resetErrorMessage.classList.remove('show');
+      resetSuccessMessage.style.display = 'none';
+    }
+
+    function showLogin() {
+      form.style.display = 'block';
+      forgotLink.style.display = 'block';
+      forgotForm.style.display = 'none';
+      resetForm.style.display = 'none';
+      errorMessage.classList.remove('show');
+    }
+
     // Password toggle
     passwordToggle.addEventListener('click', () => {
       const type = passwordInput.type === 'password' ? 'text' : 'password';
@@ -324,7 +445,14 @@
       passwordToggle.textContent = type === 'password' ? '👁️‍🗨️' : '👁️';
     });
 
-    // Form submission
+    // New password toggle
+    newPasswordToggle.addEventListener('click', () => {
+      const type = newPasswordInput.type === 'password' ? 'text' : 'password';
+      newPasswordInput.type = type;
+      newPasswordToggle.textContent = type === 'password' ? '👁️‍🗨️' : '👁️';
+    });
+
+    // Form submission - Login
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -361,6 +489,95 @@
         errorMessage.classList.add('show');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Form submission - Forgot Password
+    forgotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      forgotErrorMessage.classList.remove('show');
+      forgotSuccessMessage.style.display = 'none';
+      forgotSubmitBtn.disabled = true;
+      forgotSubmitBtn.textContent = '⏳ Sending OTP...';
+
+      forgotEmailValue = document.getElementById('forgot-email').value;
+
+      try {
+        const response = await fetch('/dashboard/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: forgotEmailValue }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          forgotSuccessText.textContent = 'OTP has been generated. Check the server console for the OTP.';
+          forgotSuccessMessage.style.display = 'block';
+          setTimeout(() => {
+            showResetPassword();
+          }, 1500);
+        } else {
+          forgotErrorText.textContent = data.message || 'Failed to process request';
+          forgotErrorMessage.classList.add('show');
+        }
+      } catch (err) {
+        console.error('Forgot password error:', err);
+        forgotErrorText.textContent = 'An error occurred. Please try again.';
+        forgotErrorMessage.classList.add('show');
+      } finally {
+        forgotSubmitBtn.disabled = false;
+        forgotSubmitBtn.textContent = 'Send OTP';
+      }
+    });
+
+    // Form submission - Reset Password
+    resetForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      resetErrorMessage.classList.remove('show');
+      resetSuccessMessage.style.display = 'none';
+      resetSubmitBtn.disabled = true;
+      resetSubmitBtn.textContent = '⏳ Resetting...';
+
+      const otp = document.getElementById('otp').value;
+      const newPassword = document.getElementById('new-password').value;
+
+      if (newPassword.length < 6) {
+        resetErrorText.textContent = 'Password must be at least 6 characters';
+        resetErrorMessage.classList.add('show');
+        resetSubmitBtn.disabled = false;
+        resetSubmitBtn.textContent = 'Reset Password';
+        return;
+      }
+
+      try {
+        const response = await fetch('/dashboard/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: forgotEmailValue, otp, newPassword }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          resetSuccessText.textContent = 'Password has been reset successfully!';
+          resetSuccessMessage.style.display = 'block';
+          setTimeout(() => {
+            showLogin();
+          }, 2000);
+        } else {
+          resetErrorText.textContent = data.message || 'Failed to reset password';
+          resetErrorMessage.classList.add('show');
+        }
+      } catch (err) {
+        console.error('Reset password error:', err);
+        resetErrorText.textContent = 'An error occurred. Please try again.';
+        resetErrorMessage.classList.add('show');
+      } finally {
+        resetSubmitBtn.disabled = false;
+        resetSubmitBtn.textContent = 'Reset Password';
       }
     });
   </script>

@@ -14,6 +14,7 @@ import session from 'express-session';
 import bcrypt from 'bcrypt';
 
 import adminUser from './src/models/adminUser.js';
+import { adminForgotPassword, adminResetPassword } from './src/controllers/adminUserController.js';
 import AidRequest from './src/models/AidRequest.js';
 import CalamityType from './src/models/CalamityType.js';
 import DonationRequest from './src/models/DonationRequest.js';
@@ -193,6 +194,16 @@ app.get('/dashboard/login', (req, res) => {
   }
 
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Handle forgot password POST
+app.post('/dashboard/forgot-password', async (req, res) => {
+  return adminForgotPassword(req, res);
+});
+
+// Handle reset password POST
+app.post('/dashboard/reset-password', async (req, res) => {
+  return adminResetPassword(req, res);
 });
 
 // Handle login POST

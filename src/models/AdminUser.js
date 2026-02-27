@@ -16,6 +16,15 @@ const adminUserSchema = new mongoose.Schema({
     required: true,
     enum: ['NGO', 'localAuthority'],
   },
+  // Password reset OTP
+  passwordResetOtp: {
+    type: String,
+    default: null,
+  },
+  passwordResetOtpExpires: {
+    type: Date,
+    default: null,
+  },
 });
 
 // Hash password before saving
