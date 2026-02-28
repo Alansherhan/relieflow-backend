@@ -12,6 +12,7 @@ const COLORS = {
   red: '#ef4444',
   yellow: '#f59e0b',
   gray: '#94a3b8',
+  orange: '#f97316',
 };
 
 // Format relative time
@@ -236,11 +237,11 @@ const Dashboard = () => {
             {' completed • '}
             <span style={{ color: COLORS.cyan }}>✓ {stats?.tasks?.open || 0}</span>
             {' open  • '}
-            <span style={{ color: COLORS.cyan }}>✓ {stats?.tasks?.assigned || 0}</span>
+            <span style={{ color: COLORS.orange }}>✓ {stats?.tasks?.assigned || 0}</span>
             {' assigned • '}
-            <span style={{ color: COLORS.orange }}>✓ {stats?.tasks?.accepted || 0}</span>
+            <span style={{ color: COLORS.yellow }}>✓ {stats?.tasks?.accepted || 0}</span>
             {' accepted • '}
-            <span style={{ color: COLORS.orange }}>✓ {stats?.tasks?.rejected || 0}</span>
+            <span style={{ color: COLORS.red }}>✓ {stats?.tasks?.rejected || 0}</span>
             {' rejected • '}
           </div>
         </a>
@@ -252,7 +253,7 @@ const Dashboard = () => {
             <span style={{ color: COLORS.yellow }}>{stats?.aidRequests?.pending || 0}</span>
             {' pending • '}
             <span style={{ color: COLORS.green }}>{stats?.aidRequests?.completed || 0}</span>
-            {' resolved'}
+            {' completed'}
           </div>
         </a>
 

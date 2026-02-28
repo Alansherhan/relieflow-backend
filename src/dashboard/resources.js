@@ -14,6 +14,7 @@ import Notification from '../models/Notification.js';
 import PortalDonation from '../models/PortalDonation.js';
 import AdminWallet from '../models/AdminWallet.js';
 import { Timestamp } from 'mongodb';
+import { resetPassword } from '../controllers/userProfileController.js';
 
 // FCM is now sent automatically via Notification model post-save hook
 
@@ -1279,6 +1280,8 @@ export const UserProfileResource = {
       icon: 'User',
     },
     properties: {
+      resetPassword: { isVisible: false },
+      fcmToken: { isVisible: false },
       _id: { isVisible: false },
       password: { isVisible: false },
       formattedAddress: {
@@ -1321,6 +1324,7 @@ export const UserProfileResource = {
           'address.addressLine2': 'Area / Locality',
           'address.addressLine3': 'Landmark',
           'address.pinCode': 'PIN Code',
+          
         },
       },
     },
