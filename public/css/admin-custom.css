@@ -1,9 +1,12 @@
+/* === Google Fonts Import (must be before all other rules) === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 /* ============================================
    Relief Management System - Dashboard Styles
    Only affects the custom dashboard, not resource pages
    ============================================ */
 
-/* === Force default cursor on ALL non-interactive text in AdminJS === */
+/* === Force default cursor and prevent text selection caret on non-interactive text === */
 body *,
 body *::before,
 body *::after,
@@ -11,6 +14,10 @@ body *::after,
 #app *::before,
 #app *::after {
   cursor: default !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
 }
 
 /* Restore pointer cursor for interactive/clickable elements */
@@ -20,9 +27,6 @@ button,
 button *,
 [role="button"],
 [role="button"] *,
-input,
-select,
-textarea,
 [data-css="sidebar-logo"],
 [data-css="sidebar-logo"] *,
 nav a,
@@ -34,8 +38,17 @@ nav a *,
   cursor: pointer !important;
 }
 
-/* === Google Fonts Import === */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Restore text selection and cursor on actual input elements */
+input,
+select,
+textarea,
+[contenteditable="true"] {
+  cursor: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
 
 /* Hide AdminJS tips */
 .adminjs_Tips {
