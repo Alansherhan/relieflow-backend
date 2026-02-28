@@ -667,7 +667,7 @@ export const DonationRequestResource = {
   options: {
     navigation: {
       name: 'Donations',
-      icon: 'Money',
+      icon: 'DollarSign',
     },
     properties: {
       _id: { isVisible: false },
@@ -1340,7 +1340,7 @@ export const QuizQuestionResource = {
   options: {
     navigation: {
       name: 'Content Management',
-      icon: 'Document',
+      icon: 'FileText',
     },
     properties: {
       _id: { isVisible: false },
@@ -1364,7 +1364,7 @@ export const DisasterTipsResource = {
   options: {
     navigation: {
       name: 'Content Management',
-      icon: 'Document',
+      icon: 'FileText',
     },
     properties: {
       _id: { isVisible: false },
@@ -1483,7 +1483,7 @@ export const PortalDonationResource = {
   options: {
     navigation: {
       name: 'Donations',
-      icon: 'Money',
+      icon: 'DollarSign',
     },
     properties: {
       _id: { isVisible: false },
@@ -1613,7 +1613,7 @@ export const AdminWalletResource = {
   options: {
     navigation: {
       name: 'Donations',
-      icon: 'Money',
+      icon: 'DollarSign',
     },
     properties: {
       _id: { isVisible: false },
