@@ -1284,6 +1284,8 @@ export const UserProfileResource = {
       fcmToken: { isVisible: false },
       _id: { isVisible: false },
       password: { isVisible: false },
+      passwordResetOtp: { isVisible: false },
+      passwordResetOtpExpires: { isVisible: false },
       formattedAddress: {
         isVisible: { list: true, filter: false, show: false, edit: false },
       },
