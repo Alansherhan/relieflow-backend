@@ -149,12 +149,16 @@ const parseReliefCenterPayload = (payload) => {
 export const AidRequestResource = {
   resource: AidRequest,
   options: {
+    titleProperty: 'name',
     navigation: {
       name: 'Aid Operations',
       icon: 'Compass',
     },
     properties: {
       _id: {
+        isVisible: false,
+      },
+      name: {
         isVisible: false,
       },
       imageUrl: {
@@ -672,6 +676,7 @@ export const CalamityTypeResource = {
 export const DonationRequestResource = {
   resource: DonationRequest,
   options: {
+    titleProperty: 'title',
     navigation: {
       name: 'Donations',
       icon: 'DollarSign',
@@ -1197,6 +1202,14 @@ export const TaskResource = {
         reference: 'userProfile',
         isVisible: { list: false, filter: false, show: false, edit: false },
       },
+      imageUrl: {
+        isVisible: { list: true, filter: false, show: true, edit: true },
+        components: {
+          list: Components.ImageComponent,
+          show: Components.ImageComponent,
+          edit: Components.ImageEditComponent,
+        },
+      },
       aidRequest: {
         reference: 'AidRequest', // Must match the resource ID you registered
         components: {
@@ -1294,6 +1307,12 @@ export const UserProfileResource = {
       password: { isVisible: false },
       passwordResetOtp: { isVisible: false },
       passwordResetOtpExpires: { isVisible: false },
+      profileImage: {
+        components: {
+          list: Components.ImageComponent,
+          show: Components.ImageComponent,
+        },
+      },
       formattedAddress: {
         isVisible: { list: true, filter: false, show: false, edit: false },
       },
