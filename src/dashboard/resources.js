@@ -15,6 +15,7 @@ import PortalDonation from '../models/PortalDonation.js';
 import AdminWallet from '../models/AdminWallet.js';
 import { Timestamp } from 'mongodb';
 import { resetPassword } from '../controllers/userProfileController.js';
+import { ps } from 'zod/v4/locales';
 
 // FCM is now sent automatically via Notification model post-save hook
 
@@ -28,12 +29,18 @@ export const AdminResource = {
     properties: {
       password: { isVisible: false },
       _id: { isVisible: false },
+      passwordResetOtp: { isVisible: false },
+      passwordResetOtpExpires: { isVisible: false },
+      PsswordResetOtpExpires: { isVisible: false },
     },
     translations: {
       en: {
         labels: {
           Admin: 'Admin Staff',
         },
+        properties:{
+          PasswordResetOtpExpires: { isVisible: false },
+        }
       },
     },
     sort: {
@@ -490,7 +497,7 @@ export const AidRequestResource = {
               }),
               notice: {
                 message:
-                  'Aid request accepted successfully! Volunteers have been notified.',
+                  'Aid request accepted successfully!',
                 type: 'success',
               },
             };
@@ -974,8 +981,8 @@ export const ReliefCenterResource = {
       'address.location': { isVisible: false },
       'address.location.type': { isVisible: false },
       'address.location.coordinates': { isVisible: false },
-      createdAt: { isVisible: false },
-      updatedAt: { isVisible: false },
+      createdAt: { isVisible: { list: false, filter: true, show: true, edit: false } },
+      updatedAt: { isVisible: { list: false, filter: true, show: true, edit: false } },
     },
 
     actions: {
@@ -1184,11 +1191,11 @@ export const TaskResource = {
     properties: {
       _id: { isVisible: false },
       volunteersNeeded: {
-        isVisible: { list: true, filter: true, show: true, edit: true },
+        isVisible: { list: false },
       },
       assignedVolunteers: {
         reference: 'userProfile',
-        isVisible: { list: true, filter: true, show: true, edit: true },
+        isVisible: { list: false, filter: false, show: false, edit: false },
       },
       aidRequest: {
         reference: 'AidRequest', // Must match the resource ID you registered
@@ -1262,6 +1269,7 @@ export const TaskResource = {
           deliveryLocation: 'Delivery Location',
           pickupAddress: 'Pickup Address',
           deliveryAddress: 'Delivery Address',
+          pickupLocation:{isVisible: false}
         },
       },
     },
@@ -1440,12 +1448,19 @@ export const NotificationResource = {
       },
 
       // Hide system/internal fields
-      readBy: { isVisible: false },
+      readBy: { 
+        isVisible: {list: false, filter: true, show: true} 
+        },
       isReadByAll: { isVisible: false },
       createdAt: {
-        isVisible: { list: true, filter: true, show: true, edit: false },
+        isVisible: { list: false, filter: true, show: true, edit: false },
       },
       updatedAt: { isVisible: false },
+      data: { isVisible: false },
+      skipFcm: { isVisible: false },
+      sentAt:{
+        isVisible: { list: false, filter: true, show: true, edit: false },
+      }
     },
     actions: {
       // Use custom form for creating notifications
@@ -1621,6 +1636,14 @@ export const AdminWalletResource = {
       _id: { isVisible: false },
       transactions: {
         isVisible: { list: false, filter: false, show: true, edit: false },
+        
+      },
+      createdAt: {
+        isVisible: { list: false, filter: true, show: true, edit: false },
+        
+      },
+      totalDebits:{
+        isVisible: false
       },
     },
     actions: {
@@ -1637,8 +1660,11 @@ export const AdminWalletResource = {
         properties: {
           balance: 'Current Balance',
           totalCredits: 'Total Donations Received',
-          totalDebits: 'Total Funds Used',
+          // totalDebits: 'Total Funds Used',
           donorCount: 'Number of Donors',
+          totalDebits:{
+            isVisible: false
+          }
         },
       },
     },
