@@ -56,5 +56,12 @@ export const itemSchema= new mongoose.Schema({
     fulfilledQuantity:{
         type:Number,
         default:0
+    },
+    // Reference to the original DonationRequest item _id (used in PortalDonation
+    // to match donated items back to the correct request item, especially when
+    // multiple items share the same category)
+    requestItemId:{
+        type:mongoose.Types.ObjectId,
+        required:false
     }
 })

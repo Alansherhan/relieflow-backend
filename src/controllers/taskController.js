@@ -582,9 +582,15 @@ export const completeTaskWithProof = async (req, res) => {
           );
           if (donationRequest && donationRequest.itemDetails) {
             portalDonation.itemDetails.forEach((donatedItem) => {
-              const requestItem = donationRequest.itemDetails.find(
-                (ri) => ri.category === donatedItem.category
-              );
+              // Match by requestItemId first (handles multiple items with same category),
+              // fall back to category match for backward compatibility
+              const requestItem = donatedItem.requestItemId
+                ? donationRequest.itemDetails.find(
+                    (ri) => ri._id.toString() === donatedItem.requestItemId.toString()
+                  )
+                : donationRequest.itemDetails.find(
+                    (ri) => ri.category === donatedItem.category
+                  );
               if (requestItem) {
                 requestItem.fulfilledQuantity =
                   (requestItem.fulfilledQuantity || 0) +

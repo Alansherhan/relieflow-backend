@@ -180,6 +180,17 @@ export const acceptDonationRequest = async (req, res) => {
 
     const actualDonationType = donationType || donationRequest.donationType;
 
+    // For cash donations, check if the request is already fully funded
+    if (actualDonationType === 'cash' && donationRequest.amount) {
+      const remaining = donationRequest.amount - (donationRequest.fulfilledAmount || 0);
+      if (remaining <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'This donation request has already been fully funded.',
+        });
+      }
+    }
+
     // For item donations, deliveryMethod is required
     if (actualDonationType === 'item') {
       if (
@@ -353,6 +364,7 @@ export const addGuestDonation = async (req, res) => {
 
     // Validate donation request if provided
     let donationRequest = null;
+    let cappedAmount = amount;
     if (donationRequestId) {
       donationRequest = await DonationRequest.findById(donationRequestId);
       if (!donationRequest) {
@@ -360,6 +372,17 @@ export const addGuestDonation = async (req, res) => {
           success: false,
           message: 'Donation request not found',
         });
+      }
+      // Cap the amount to the remaining needed
+      if (donationRequest.amount) {
+        const remaining = donationRequest.amount - (donationRequest.fulfilledAmount || 0);
+        if (remaining <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'This donation request has already been fully funded.',
+          });
+        }
+        cappedAmount = Math.min(amount, remaining);
       }
     }
 
@@ -371,7 +394,7 @@ export const addGuestDonation = async (req, res) => {
       donorPhone,
       donationRequest: donationRequestId || undefined,
       donationType: 'cash',
-      amount,
+      amount: cappedAmount,
       status: 'completed', // Cash donations complete immediately (mock)
       transactionRef: transactionRef || `TXN_${Date.now()}`,
       isWalletDonation: !donationRequestId,
@@ -380,7 +403,7 @@ export const addGuestDonation = async (req, res) => {
     // Update donation request if linked
     if (donationRequest) {
       donationRequest.fulfilledAmount =
-        (donationRequest.fulfilledAmount || 0) + amount;
+        (donationRequest.fulfilledAmount || 0) + cappedAmount;
       const isFullyFulfilled =
         donationRequest.fulfilledAmount >= donationRequest.amount;
       if (isFullyFulfilled) {
@@ -481,8 +504,26 @@ export const submitCashDonation = async (req, res) => {
       });
     }
 
+    // Cap the amount to the remaining needed on the linked donation request
+    let cappedAmount = amount;
+    if (portalDonation.donationRequest) {
+      const donationRequest = await DonationRequest.findById(
+        portalDonation.donationRequest
+      );
+      if (donationRequest && donationRequest.amount) {
+        const remaining = donationRequest.amount - (donationRequest.fulfilledAmount || 0);
+        if (remaining <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'This donation request has already been fully funded.',
+          });
+        }
+        cappedAmount = Math.min(amount, remaining);
+      }
+    }
+
     // Update donation
-    portalDonation.amount = amount;
+    portalDonation.amount = cappedAmount;
     portalDonation.transactionRef = transactionRef || `TXN_${Date.now()}`;
     portalDonation.status = 'completed'; // Cash donations complete immediately
     await portalDonation.save();
@@ -494,7 +535,7 @@ export const submitCashDonation = async (req, res) => {
       );
       if (donationRequest) {
         donationRequest.fulfilledAmount =
-          (donationRequest.fulfilledAmount || 0) + amount;
+          (donationRequest.fulfilledAmount || 0) + cappedAmount;
         const isFullyFulfilled =
           donationRequest.fulfilledAmount >= donationRequest.amount;
         if (isFullyFulfilled) {
@@ -618,9 +659,15 @@ export const submitItemDonation = async (req, res) => {
       );
       if (donationRequest && donationRequest.itemDetails) {
         donatedItems.forEach((donatedItem) => {
-          const requestItem = donationRequest.itemDetails.find(
-            (ri) => ri.category === donatedItem.category
-          );
+          // Match by requestItemId first (handles multiple items with same category),
+          // fall back to category match for backward compatibility
+          const requestItem = donatedItem.requestItemId
+            ? donationRequest.itemDetails.find(
+                (ri) => ri._id.toString() === donatedItem.requestItemId.toString()
+              )
+            : donationRequest.itemDetails.find(
+                (ri) => ri.category === donatedItem.category
+              );
           if (requestItem) {
             requestItem.fulfilledQuantity =
               (requestItem.fulfilledQuantity || 0) +
@@ -1002,9 +1049,15 @@ export const cancelDonation = async (req, res) => {
         portalDonation.itemDetails
       ) {
         portalDonation.itemDetails.forEach((donatedItem) => {
-          const requestItem = donationRequest.itemDetails.find(
-            (ri) => ri.category === donatedItem.category
-          );
+          // Match by requestItemId first (handles multiple items with same category),
+          // fall back to category match for backward compatibility
+          const requestItem = donatedItem.requestItemId
+            ? donationRequest.itemDetails.find(
+                (ri) => ri._id.toString() === donatedItem.requestItemId.toString()
+              )
+            : donationRequest.itemDetails.find(
+                (ri) => ri.category === donatedItem.category
+              );
           if (requestItem) {
             requestItem.fulfilledQuantity = Math.max(
               0,
