@@ -683,6 +683,18 @@ export const DonationRequestResource = {
     },
     properties: {
       _id: { isVisible: false },
+      title: {
+        isVisible: { list: true, filter: true, show: true, edit: true },
+        components: {
+          list: Components.TextWrapComponent,
+        },
+      },
+      description: {
+        isVisible: { list: true, filter: true, show: true, edit: true },
+        components: {
+          list: Components.DescriptionComponent,
+        },
+      },
       amount: {
         isVisible: {
           list: false,
@@ -1196,11 +1208,11 @@ export const TaskResource = {
     properties: {
       _id: { isVisible: false },
       volunteersNeeded: {
-        isVisible: { list: false },
+        isVisible: { list: false, filter: true, show: true, edit: true },
       },
       assignedVolunteers: {
         reference: 'userProfile',
-        isVisible: { list: false, filter: false, show: false, edit: false },
+        isVisible: { list: true, filter: false, show: true, edit: false },
       },
       imageUrl: {
         isVisible: { list: true, filter: false, show: true, edit: true },

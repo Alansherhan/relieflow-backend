@@ -81,6 +81,14 @@ const Components = {
     'AddressShow',
     path.join(__dirname, 'AddressShow.jsx')
   ),
+  TextWrapComponent: componentLoader.add(
+    'TextWrapComponent',
+    path.join(__dirname, 'TextWrapComponent.jsx')
+  ),
+  DescriptionComponent: componentLoader.add(
+    'DescriptionComponent',
+    path.join(__dirname, 'DescriptionComponent.jsx')
+  ),
 };
 
 export { componentLoader, Components };

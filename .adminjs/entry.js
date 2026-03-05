@@ -35,3 +35,7 @@ import NotificationForm from '../src/dashboard/components/NotificationForm'
 AdminJS.UserComponents.NotificationForm = NotificationForm
 import AddressShow from '../src/dashboard/components/AddressShow'
 AdminJS.UserComponents.AddressShow = AddressShow
+import TextWrapComponent from '../src/dashboard/components/TextWrapComponent'
+AdminJS.UserComponents.TextWrapComponent = TextWrapComponent
+import DescriptionComponent from '../src/dashboard/components/DescriptionComponent'
+AdminJS.UserComponents.DescriptionComponent = DescriptionComponent
