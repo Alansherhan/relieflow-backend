@@ -469,7 +469,7 @@ const LoginComponent = (props) => {
 
         <Box style={{ textAlign: 'center', marginTop: '1rem' }}>
           <Text style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-            © 2024 Relief Management System. All rights reserved.
+            © 2026 Relief Management System. All rights reserved.
           </Text>
         </Box>
       </Box>
