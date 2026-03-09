@@ -117,6 +117,12 @@ const adminOptions = {
   logoutPath: '/dashboard/logout',
   componentLoader,
 
+  pages: {
+    login: {
+      component: Components.LoginComponent,
+    },
+  },
+
   branding: {
     companyName: 'RelieFlow',
     logo: '/images/logo3.png',
@@ -185,7 +191,7 @@ app.post('/dashboard/reset-password', async (req, res) => {
   return adminResetPassword(req, res);
 });
 
-// Build authenticated router — AdminJS handles login/logout/sessions
+// Build authenticated router — AdminJS handles sessions
 const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
   adminJS,
   {
@@ -210,6 +216,24 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
   }
 );
 
+// Custom login POST handler — handles JSON login from LoginComponent.jsx
+// Must be mounted on the adminRouter BEFORE app.use so it shares AdminJS's session
+adminRouter.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  const admin = await authenticate(email, password);
+
+  if (admin) {
+    req.session.adminUser = admin;
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Session save failed' });
+      }
+      res.json({ redirectUrl: '/dashboard' });
+    });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
 
 // Mount admin router
 app.use(adminJS.options.rootPath, adminRouter);
