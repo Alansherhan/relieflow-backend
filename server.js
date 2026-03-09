@@ -157,22 +157,6 @@ const adminOptions = {
 const adminJS = new AdminJS(adminOptions);
 adminJS.watch();
 
-// Session middleware
-const sessionMiddleware = session({
-  resave: false,
-  saveUninitialized: false,
-  secret:
-    process.env.SESSION_SECRET || 'another-secret-key-at-least-32-characters',
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 * 24 * 30,
-  },
-  name: 'adminjs-session',
-});
-
-app.use(sessionMiddleware);
-
 // Authentication configuration
 const authenticate = async (email, password) => {
   try {
@@ -191,15 +175,6 @@ const authenticate = async (email, password) => {
   }
 };
 
-// Custom login page route - MUST come BEFORE admin router
-app.get('/dashboard/login', (req, res) => {
-  if (req.session.adminUser) {
-    return res.redirect('/dashboard');
-  }
-
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
 // Handle forgot password POST
 app.post('/dashboard/forgot-password', async (req, res) => {
   return adminForgotPassword(req, res);
@@ -210,26 +185,7 @@ app.post('/dashboard/reset-password', async (req, res) => {
   return adminResetPassword(req, res);
 });
 
-// Handle login POST
-app.post('/dashboard/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  const admin = await authenticate(email, password);
-
-  if (admin) {
-    req.session.adminUser = admin;
-    req.session.save((err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Session save failed' });
-      }
-      res.json({ redirectUrl: '/dashboard' });
-    });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
-  }
-});
-
-// Build authenticated router
+// Build authenticated router — AdminJS handles login/logout/sessions
 const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
   adminJS,
   {
@@ -247,7 +203,7 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
       process.env.SESSION_SECRET || 'another-secret-key-at-least-32-characters',
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Render/Cloudflare handles HTTPS termination
       maxAge: 1000 * 60 * 60 * 24,
     },
     name: 'adminjs-session',
