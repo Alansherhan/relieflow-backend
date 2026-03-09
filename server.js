@@ -41,7 +41,7 @@ import {
   componentLoader,
   Components,
 } from './src/dashboard/components/components.js';
-  
+
 dotenv.config();
 const app = express();
 
@@ -57,7 +57,8 @@ app.use(
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:3002',
-      process.env.PORTAL_URL, // Production portal URL
+      process.env.PORTAL_URL, // Production portal URL (Vercel)
+      process.env.RENDER_EXTERNAL_URL, // Render backend URL (for AdminJS)
     ].filter(Boolean),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -162,7 +163,7 @@ const sessionMiddleware = session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 * 24 * 30                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ,
+    maxAge: 1000 * 60 * 60 * 24 * 30,
   },
   name: 'adminjs-session',
 });
@@ -267,8 +268,9 @@ app.get('/api/dashboard/stats', getDashboardStats);
 app.use('/', router);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const HOST = '0.0.0.0'; // Bind to all interfaces (required for Render)
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
   console.log(`AdminJS available at http://localhost:${PORT}/dashboard`);
 });
 // Trigger restart

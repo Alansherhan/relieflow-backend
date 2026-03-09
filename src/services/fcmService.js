@@ -14,8 +14,18 @@ const initializeFirebase = () => {
     if (firebaseInitialized) return;
 
     try {
-        const serviceAccountPath = path.join(__dirname, '../../firebase-service-account.json');
-        const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+        let serviceAccount;
+
+        // Try loading from env var first (production/Render)
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            console.log('Firebase: Loading credentials from environment variable');
+        } else {
+            // Fallback to local file (development)
+            const serviceAccountPath = path.join(__dirname, '../../firebase-service-account.json');
+            serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+            console.log('Firebase: Loading credentials from local file');
+        }
 
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),

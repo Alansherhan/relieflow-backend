@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: relieflow-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGO_URL
+        sync: false # Set manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: PORTAL_URL
+        sync: false # Set to your Vercel donation portal URL
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false # Paste firebase-service-account.json contents as single-line JSON
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
