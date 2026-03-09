@@ -161,7 +161,14 @@ const adminOptions = {
 };
 
 const adminJS = new AdminJS(adminOptions);
-adminJS.watch();
+
+// In production, initialize() builds the bundle and waits for it to finish
+// In development, watch() rebuilds on file changes
+if (process.env.NODE_ENV === 'production') {
+  await adminJS.initialize();
+} else {
+  adminJS.watch();
+}
 
 // Authentication configuration
 const authenticate = async (email, password) => {
