@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import fs from 'fs';
 import router from './src/routes/apiRoutes.js';
 import portalRoutes from './src/routes/portal.routes.js';
 import AdminJS from 'adminjs';
@@ -53,13 +54,25 @@ app.set('trust proxy', 1);
 
 // Serve AdminJS components bundle directly — bypasses AdminJS's internal router
 // which fails to serve this file on Render due to middleware chain issues
+const bundlePath = path.join(__dirname, '.adminjs', 'bundle.js');
+console.log('AdminJS bundle path:', bundlePath, '| exists:', fs.existsSync(bundlePath));
+
+// Also check CWD-relative path as fallback
+const bundlePathCwd = path.resolve('.adminjs', 'bundle.js');
+console.log('AdminJS bundle CWD path:', bundlePathCwd, '| exists:', fs.existsSync(bundlePathCwd));
+
 app.get('/dashboard/frontend/assets/components.bundle.js', (req, res) => {
-  const bundlePath = path.join(__dirname, '.adminjs', 'bundle.js');
+  // Try __dirname-based path first, then CWD-based
+  const filePath = fs.existsSync(bundlePath) ? bundlePath : bundlePathCwd;
+  if (!fs.existsSync(filePath)) {
+    console.error('components.bundle.js not found at either path');
+    return res.status(404).send('Bundle not found');
+  }
   res.type('application/javascript');
-  res.sendFile(bundlePath, (err) => {
-    if (err) {
+  res.sendFile(filePath, (err) => {
+    if (err && !res.headersSent) {
       console.error('Failed to serve components.bundle.js:', err.message);
-      res.status(404).end();
+      res.status(500).end();
     }
   });
 });
