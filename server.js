@@ -48,18 +48,12 @@ const app = express();
 // Trust Render's reverse proxy (required for secure cookies behind HTTPS proxy)
 app.set('trust proxy', 1);
 
-// TEMPORARY DEBUG: Check if .adminjs/bundle.js exists
-import fs from 'fs';
-app.get('/debug-bundle', (req, res) => {
-  const resolved = path.resolve('.adminjs/bundle.js');
-  const cwd = process.cwd();
-  const exists = fs.existsSync(resolved);
-  const dirExists = fs.existsSync(path.resolve('.adminjs'));
-  let dirContents = [];
-  if (dirExists) {
-    dirContents = fs.readdirSync(path.resolve('.adminjs'));
-  }
-  res.json({ cwd, resolved, exists, dirExists, dirContents, nodeEnv: process.env.NODE_ENV });
+// Serve AdminJS components bundle directly — bypasses AdminJS's internal router
+// which fails to serve this file on Render due to middleware chain issues
+app.get('/dashboard/frontend/assets/components.bundle.js', (req, res) => {
+  const bundlePath = path.resolve('.adminjs/bundle.js');
+  res.type('application/javascript');
+  res.sendFile(bundlePath);
 });
 
 const __filename = fileURLToPath(import.meta.url);
