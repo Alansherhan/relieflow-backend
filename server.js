@@ -158,13 +158,10 @@ const adminOptions = {
 
 const adminJS = new AdminJS(adminOptions);
 
-// In production, initialize() builds the bundle and waits for it to finish
-// In development, watch() rebuilds on file changes
-if (process.env.NODE_ENV === 'production') {
-  await adminJS.initialize();
-} else {
-  adminJS.watch();
-}
+// Build AdminJS component bundles
+// watch() builds + serves the components bundle dynamically
+// This works in both dev and production
+adminJS.watch();
 
 // Session middleware - MUST use same cookie name as AdminJS router to share session
 const sessionMiddleware = session({
