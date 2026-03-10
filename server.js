@@ -158,10 +158,8 @@ const adminOptions = {
 
 const adminJS = new AdminJS(adminOptions);
 
-// Load pre-built AdminJS component bundles
-// The bundle is pre-built by `node build-adminjs.js` during the build step
-// In dev, run `node build-adminjs.js` after changing dashboard components
-await adminJS.initialize();
+// Note: AdminJS component bundle is pre-built (see .adminjs/bundle.js)
+// buildAuthenticatedRouter() below will call admin.initialize() internally
 
 // Session middleware - MUST use same cookie name as AdminJS router to share session
 const sessionMiddleware = session({

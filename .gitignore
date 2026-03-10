@@ -2,7 +2,7 @@ node_modules/
 dist/
 .env
 
-.adminjs/
+
 
 # Firebase credentials - never commit this!
 firebase-service-account.json
