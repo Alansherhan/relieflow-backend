@@ -55,26 +55,25 @@ app.set('trust proxy', 1);
 // Serve AdminJS components bundle directly — bypasses AdminJS's internal router
 // which fails to serve this file on Render due to middleware chain issues
 const bundlePath = path.join(__dirname, '.adminjs', 'bundle.js');
-console.log('AdminJS bundle path:', bundlePath, '| exists:', fs.existsSync(bundlePath));
-
-// Also check CWD-relative path as fallback
 const bundlePathCwd = path.resolve('.adminjs', 'bundle.js');
-console.log('AdminJS bundle CWD path:', bundlePathCwd, '| exists:', fs.existsSync(bundlePathCwd));
+const resolvedBundlePath = fs.existsSync(bundlePath) ? bundlePath : bundlePathCwd;
+console.log('AdminJS bundle path:', resolvedBundlePath, '| exists:', fs.existsSync(resolvedBundlePath));
+
+// Pre-read bundle into memory at startup for reliable serving
+let bundleContent;
+try {
+  bundleContent = fs.readFileSync(resolvedBundlePath, 'utf-8');
+  console.log('AdminJS bundle loaded into memory:', bundleContent.length, 'bytes');
+} catch (err) {
+  console.error('Failed to read AdminJS bundle:', err.message);
+}
 
 app.get('/dashboard/frontend/assets/components.bundle.js', (req, res) => {
-  // Try __dirname-based path first, then CWD-based
-  const filePath = fs.existsSync(bundlePath) ? bundlePath : bundlePathCwd;
-  if (!fs.existsSync(filePath)) {
-    console.error('components.bundle.js not found at either path');
+  if (!bundleContent) {
     return res.status(404).send('Bundle not found');
   }
-  res.type('application/javascript');
-  res.sendFile(filePath, (err) => {
-    if (err && !res.headersSent) {
-      console.error('Failed to serve components.bundle.js:', err.message);
-      res.status(500).end();
-    }
-  });
+  res.set('Content-Type', 'application/javascript');
+  res.send(bundleContent);
 });
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/images', express.static(path.join(__dirname, 'assets/images')));
