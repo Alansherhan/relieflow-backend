@@ -45,19 +45,24 @@ import {
 dotenv.config();
 const app = express();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Trust Render's reverse proxy (required for secure cookies behind HTTPS proxy)
 app.set('trust proxy', 1);
 
 // Serve AdminJS components bundle directly — bypasses AdminJS's internal router
 // which fails to serve this file on Render due to middleware chain issues
 app.get('/dashboard/frontend/assets/components.bundle.js', (req, res) => {
-  const bundlePath = path.resolve('.adminjs/bundle.js');
+  const bundlePath = path.join(__dirname, '.adminjs', 'bundle.js');
   res.type('application/javascript');
-  res.sendFile(bundlePath);
+  res.sendFile(bundlePath, (err) => {
+    if (err) {
+      console.error('Failed to serve components.bundle.js:', err.message);
+      res.status(404).end();
+    }
+  });
 });
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/images', express.static(path.join(__dirname, 'assets/images')));
 
@@ -166,8 +171,10 @@ const adminOptions = {
 
 const adminJS = new AdminJS(adminOptions);
 
-// Note: AdminJS component bundle is pre-built (see .adminjs/bundle.js)
-// buildAuthenticatedRouter() below will call admin.initialize() internally
+// Skip runtime re-bundling — bundle is pre-built during the build step (see build-adminjs.js)
+// buildAuthenticatedRouter() calls adminJS.initialize() internally which would
+// re-bundle and can fail on memory-constrained hosts (Render free tier).
+adminJS.initialize = async () => {};
 
 // Session middleware - MUST use same cookie name as AdminJS router to share session
 const sessionMiddleware = session({
