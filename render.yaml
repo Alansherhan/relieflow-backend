@@ -3,7 +3,7 @@ services:
     name: relieflow-backend
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install && node build-adminjs.js
     startCommand: node server.js
     envVars:
       - key: MONGO_URL

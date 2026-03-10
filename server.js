@@ -158,10 +158,10 @@ const adminOptions = {
 
 const adminJS = new AdminJS(adminOptions);
 
-// Build AdminJS component bundles
-// watch() builds + serves the components bundle dynamically
-// This works in both dev and production
-adminJS.watch();
+// Load pre-built AdminJS component bundles
+// The bundle is pre-built by `node build-adminjs.js` during the build step
+// In dev, run `node build-adminjs.js` after changing dashboard components
+await adminJS.initialize();
 
 // Session middleware - MUST use same cookie name as AdminJS router to share session
 const sessionMiddleware = session({
