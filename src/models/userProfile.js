@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { addressSchema } from './common.js';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -13,12 +13,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
     },
     address: {
-<<<<<<< HEAD
-=======
-      // type: addressSchema,/
->>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
-      type: String,
-
+      type: String, // You defined this as a simple String
       required: true,
     },
     phoneNumber: {
@@ -28,8 +23,13 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      // select: false,
-      requied: true,
+      // select: false, // Recommended to uncomment this for security
+      required: true, // FIXED TYPO: was 'requied'
+    },
+    // --- 1. NEW FIELD FOR IMAGE UPLOAD ---
+    profileImage: {
+      type: String,
+      default: ""
     },
     role: {
       type: String,
@@ -52,24 +52,43 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // FCM token for push notifications
+    fcmToken: {
+      type: String,
+      default: null,
+    },
+    // Password reset OTP
+    passwordResetOtp: {
+      type: String,
+      default: null,
+    },
+    passwordResetOtpExpires: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
-// Create virtual field for formatted address
+// --- 2. ADD THIS HOOK TO ENCRYPT PASSWORDS ---
+// This runs automatically before .save()
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    next();
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+// --- 3. PASSWORD MATCH METHOD ---
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// --- FIXED VIRTUAL FOR ADDRESS ---
+// Since address is just a String, we don't need complex logic
 userSchema.virtual('formattedAddress').get(function () {
-  const { address } = this;
-  if (!address) return '';
-
-  const parts = [
-    address.addressLine1,
-    address.addressLine2,
-    address.addressLine3,
-  ].filter((line) => line && line.trim() !== '');
-
-  const pin = address.pinCode ? `– ${address.pinCode}` : '';
-
-  return parts.join(', ') + ' ' + pin;
+  return this.address || '';
 });
 
 // Ensure virtuals are serialized

@@ -1,0 +1,403 @@
+/* === Google Fonts Import (must be before all other rules) === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ============================================
+   Relief Management System - Dashboard Styles
+   Only affects the custom dashboard, not resource pages
+   ============================================ */
+
+/* === Force default cursor and prevent text selection caret on non-interactive text === */
+body *,
+body *::before,
+body *::after,
+#app *,
+#app *::before,
+#app *::after {
+  cursor: default !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Restore pointer cursor for interactive/clickable elements */
+a,
+a *,
+button,
+button *,
+[role="button"],
+[role="button"] *,
+[data-css="sidebar-logo"],
+[data-css="sidebar-logo"] *,
+nav a,
+nav a *,
+.stat-card-clickable,
+.stat-card-clickable *,
+.quick-action-card,
+.quick-action-card * {
+  cursor: pointer !important;
+}
+
+/* Restore text selection and cursor on actual input elements */
+input,
+select,
+textarea,
+[contenteditable="true"] {
+  cursor: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Hide AdminJS tips */
+.adminjs_Tips {
+  display: none !important;
+}
+
+/* === Sidebar Logo Styling === */
+/* The logo link container uses data-css="sidebar-logo" */
+[data-css="sidebar-logo"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  padding: 16px !important;
+}
+
+/* Target the logo image */
+[data-css="sidebar-logo"] img {
+  max-width: 60px !important;
+  max-height: 60px !important;
+  width: 60px !important;
+  height: 60px !important;
+  object-fit: contain !important;
+}
+
+/* Add company name below logo using CSS ::after pseudo-element */
+[data-css="sidebar-logo"]::after {
+  content: "ReliefFlow";
+  display: block !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin-top: 12px !important;
+  text-align: center !important;
+}
+
+/* === Dashboard Specific Styles Only === */
+
+/* Dashboard container */
+.dashboard-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Stat cards grid */
+.stat-cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease;
+}
+
+.stat-card.stat-card-clickable {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.stat-card-clickable:hover {
+  border-color: #6366f1;
+}
+
+.stat-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.stat-card-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+/* Quick action cards */
+.quick-action-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: #1e293b;
+}
+
+.quick-action-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.quick-action-card .card-time {
+  font-size: 12px;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quick-action-card .card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.quick-action-card .card-subtitle {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Charts container */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.chart-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Info widgets row */
+.info-widgets-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 1200px) {
+  .info-widgets-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .info-widgets-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Relief center list */
+.relief-center-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.relief-center-item:last-child {
+  border-bottom: none;
+}
+
+.relief-center-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.relief-center-info {
+  flex: 1;
+}
+
+.relief-center-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.relief-center-coordinator {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Priority badges */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.priority-badge.high {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.priority-badge.medium {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.priority-badge.low {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.open {
+  background: rgba(6, 182, 212, 0.1);
+  color: #06b6d4;
+}
+
+.status-badge.assigned {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.status-badge.completed {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.status-badge.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+/* Wallet card styles */
+.wallet-balance {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.wallet-amount {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.wallet-label {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.wallet-stats {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 16px;
+}
+
+.wallet-stat {
+  text-align: center;
+}
+
+.wallet-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.wallet-stat-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stat-cards-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-container {
+    padding: 16px;
+  }
+}

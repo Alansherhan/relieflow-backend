@@ -1,38 +1,51 @@
 import mongoose from 'mongoose';
-import { addressSchema } from './common.js';
+import { addressSchema, locationSchema } from './common.js';
 
-const aidRequestSchema = new mongoose.Schema({
-  calamityType: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-    ref: 'CalamityType',
+const aidRequestSchema = new mongoose.Schema(
+  {
+    calamityType: {
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: 'CalamityType',
+    },
+    address: {
+      type: addressSchema,
+      required: true,
+    },
+    location: {
+      type: locationSchema,
+      required: true,
+    },
+    imageUrl: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ['accepted', 'pending', 'rejected', 'completed', 'in_progress'],
+    },
+    priority: {
+      type: String,
+      required: true,
+      enum: ['high', 'medium', 'low'],
+    },
+    aidRequestedBy: {
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: 'userProfile',
+    },
+    // Track if admin has viewed this request
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
   },
-  address: {
-    type: addressSchema,
-    required: true,
-  },
-  // location: {
-  //     type: locationSchema
-  // },
-  imageUrl: {
-    type: String,
-    required: false,
-  },
-  status: {
-    type: String,
-    enum: ['accepted', 'pending', 'rejected',"completed"],
-  },
-  priority: {
-    type: String,
-    required: true,
-    enum: ['high', 'medium', 'low'],
-  },
-  aidRequestedBy: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-    ref: 'userProfile',
-  },
-});
+  { timestamps: true }
+);
 
 aidRequestSchema.virtual('calamity', {
   ref: 'CalamityType',
@@ -69,11 +82,10 @@ aidRequestSchema.virtual('name').get(function () {
   const { address, calamity } = this;
   if (!address) return '';
 
-  const location = [address.addressLine1];
+  const location = address.addressLine1 || 'Unknown Location';
+  const calamityName = calamity?.calamityName || 'Unknown';
 
-  const calamityName = calamity.calamityName;
-
-  return `${location} - ${calamityName}`
+  return `${calamityName} - ${location}`;
 });
 
 // Ensure virtuals are serialized

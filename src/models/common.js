@@ -25,7 +25,7 @@ export const addressSchema = new mongoose.Schema({
     },
     pinCode: {
         type: Number,
-        required: true
+        required: false
     },
     location: {
         type: locationSchema
@@ -43,7 +43,25 @@ export const itemSchema= new mongoose.Schema({
         required:false
     },
     quantity:{
+        type:Number,
+        required:true,
+    },
+    unit:{
         type:String,
         required:true,
+        enum:["pieces","kg","liters","packs","boxes","units"],
+        default:"pieces"
+    },
+    // Track how much of this item has been fulfilled by donations
+    fulfilledQuantity:{
+        type:Number,
+        default:0
+    },
+    // Reference to the original DonationRequest item _id (used in PortalDonation
+    // to match donated items back to the correct request item, especially when
+    // multiple items share the same category)
+    requestItemId:{
+        type:mongoose.Types.ObjectId,
+        required:false
     }
 })

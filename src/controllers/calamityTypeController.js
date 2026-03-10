@@ -24,7 +24,7 @@ export const addCalamity = async (req, res) => {
 
 export const getAllCalamityTypes = async (req, res)=>{
     try{
-        const calamityTypes = await CalamityType.find().select("calamityName");
+        const calamityTypes = await CalamityType.find().select("calamityName").sort({ _id: -1 });
         console.log(calamityTypes)
         return res.status(200).json({
             success:true,

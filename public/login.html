@@ -1,90 +1,580 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-box {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-            width: 300px;
-        }
-        h2 {
-            text-align: center;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        .error {
-            color: red;
-            text-align: center;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Relief Management System</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Left Side - Branding */
+    .left-side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem;
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .left-content {
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .left-side img {
+      max-width: 250px;
+      margin-bottom: 2rem;
+      display: none; /* Hide logo as requested */
+    }
+
+    .left-side h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.025em;
+    }
+
+    .left-side p {
+      font-size: 1.125rem;
+      opacity: 0.9;
+    }
+
+    .stats {
+      display: flex;
+      gap: 2rem;
+      margin-top: 3rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-item .number {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .stat-item .label {
+      font-size: 0.875rem;
+    }
+
+    /* Right Side - Login Form */
+    .right-side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem;
+      background-color: #f9fafb;
+    }
+
+    .login-box {
+      background: white;
+      padding: 3rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      width: 450px;
+      max-width: 100%;
+    }
+
+    .login-header h2 {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #111827;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-header p {
+      font-size: 1rem;
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+
+    .error-message {
+      background-color: #fef2f2;
+      border: 1px solid #fee2e2;
+      border-radius: 0.375rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      color: #dc2626;
+      font-size: 0.875rem;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #374151;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.875rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: #f9fafb;
+    }
+
+    .form-control:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      background-color: #ffffff;
+    }
+
+    .form-control:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+    }
+
+    .password-container {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 1.25rem;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      background: #1e40af;
+    }
+
+    .submit-btn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .contact-admin {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .contact-admin a {
+      color: #2563eb;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .footer-bottom {
+      text-align: center;
+      margin-top: 2.5rem;
+      font-size: 0.7rem;
+      color: #6b7280;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .left-side {
+        display: none;
+      }
+
+      .right-side {
+        padding: 1.5rem;
+      }
+
+      .login-box {
+        padding: 2rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="login-box">
-        <h2>Login</h2>
-        <form id="loginForm">
-            <input type="text" id="username" placeholder="Username" required>
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        <div class="error" id="errorMsg"></div>
+  <div class="container">
+    <!-- Left Side - Branding -->
+    <div class="left-side">
+      <div class="left-content">
+        <img src="/images/logo-white.png" alt="Logo" onerror="this.style.display='none'" style="display: none;">
+        <h1>Relief Management System</h1>
+        <p>Coordinating disaster relief efforts with efficiency and compassion</p>
+        
+        <div class="stats">
+          <div class="stat-item">
+            <div class="number">500+</div>
+            <div class="label">Aid Requests</div>
+          </div>
+          <div class="stat-item">
+            <div class="number">1200+</div>
+            <div class="label">Donations</div>
+          </div>
+          <div class="stat-item">
+            <div class="number">50+</div>
+            <div class="label">Relief Centers</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <script>
-       document.getElementById("loginForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
+    <!-- Right Side - Login Form -->
+    <div class="right-side">
+      <div class="login-box">
+        <div class="login-header">
+          <h2>Sign In</h2>
+          <p>Enter your credentials to access the dashboard</p>
+        </div>
 
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+        <div id="error-message" class="error-message">
+          ⚠️ <span id="error-text"></span>
+        </div>
 
-    try {
-        const res = await fetch("http://localhost:3000/api/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email" class="required">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" placeholder="admin@example.com" required>
+          </div>
+          <div class="form-group">
+            <label for="password" class="required">Password</label>
+            <div class="password-container">
+              <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+              <button type="button" class="password-toggle" id="password-toggle">👁️‍🗨️</button>
+            </div>
+          </div>
+          <button type="submit" class="submit-btn" id="submit-btn">Sign In</button>
+          
+          <div class="contact-admin">
+            Don't have an account? <a href="#">Contact Administrator</a>
+          </div>
+        </form>
+
+        <div class="footer" style="display: none;">
+          <a href="#" id="forgot-password-link" style="color: #2563eb; text-decoration: none;" onclick="showForgotPassword(event)">Forgot Password?</a>
+        </div>
+
+        <!-- Forgot Password Form (hidden by default) -->
+        <form id="forgot-password-form" style="display: none;">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.5rem; font-weight: bold; color: #111827; margin-bottom: 0.5rem;">Forgot Password</h2>
+            <p style="font-size: 1rem; color: #6b7280;">Enter your email address and we'll send you an OTP to reset your password.</p>
+          </div>
+
+          <div id="forgot-error-message" class="error-message">
+            ⚠️ <span id="forgot-error-text"></span>
+          </div>
+
+          <div id="forgot-success-message" class="error-message" style="background-color: #f0fdf4; border-color: #bbf7d0; display: none;">
+            ✅ <span id="forgot-success-text" style="color: #16a34a;"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="forgot-email">Email Address *</label>
+            <input type="email" id="forgot-email" name="email" class="form-control" placeholder="admin@example.com" required>
+          </div>
+
+          <button type="submit" class="submit-btn" id="forgot-submit-btn">
+            Send OTP
+          </button>
+
+          <div style="text-align: center; margin-top: 1rem;">
+            <span style="color: #2563eb; cursor: pointer; font-weight: 500; font-size: 0.875rem;" onclick="showLogin()">← Back to Sign In</span>
+          </div>
+        </form>
+
+        <!-- Reset Password Form (hidden by default) -->
+        <form id="reset-password-form" style="display: none;">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="font-size: 1.5rem; font-weight: bold; color: #111827; margin-bottom: 0.5rem;">Reset Password</h2>
+            <p style="font-size: 1rem; color: #6b7280;">Enter the OTP and your new password.</p>
+          </div>
+
+          <div id="reset-error-message" class="error-message">
+            ⚠️ <span id="reset-error-text"></span>
+          </div>
+
+          <div id="reset-success-message" class="error-message" style="background-color: #f0fdf4; border-color: #bbf7d0; display: none;">
+            ✅ <span id="reset-success-text" style="color: #16a34a;"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="otp">OTP Code *</label>
+            <input type="text" id="otp" name="otp" class="form-control" placeholder="Enter 6-digit OTP" required maxlength="6" style="letter-spacing: 4px; text-align: center;">
+          </div>
+
+          <div class="form-group">
+            <label for="new-password">New Password *</label>
+            <div class="password-container">
+              <input type="password" id="new-password" name="newPassword" class="form-control" placeholder="Enter new password (min 6 characters)" required>
+              <button type="button" class="password-toggle" id="new-password-toggle">
+                👁️‍🗨️
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn" id="reset-submit-btn">
+            Reset Password
+          </button>
+
+          <div style="text-align: center; margin-top: 1rem;">
+            <span style="color: #2563eb; cursor: pointer; font-weight: 500; font-size: 0.875rem;" onclick="showLogin()">← Back to Sign In</span>
+          </div>
+        </form>
+
+      </div>
+
+      <div class="footer-bottom">
+        © 2024 Relief Management System. All rights reserved.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+    const passwordToggle = document.getElementById('password-toggle');
+    const passwordInput = document.getElementById('password');
+
+    // Forgot/Reset password elements
+    const forgotForm = document.getElementById('forgot-password-form');
+    const forgotLink = document.getElementById('forgot-password-link');
+    const forgotSubmitBtn = document.getElementById('forgot-submit-btn');
+    const forgotErrorMessage = document.getElementById('forgot-error-message');
+    const forgotErrorText = document.getElementById('forgot-error-text');
+    const forgotSuccessMessage = document.getElementById('forgot-success-message');
+    const forgotSuccessText = document.getElementById('forgot-success-text');
+
+    const resetForm = document.getElementById('reset-password-form');
+    const resetSubmitBtn = document.getElementById('reset-submit-btn');
+    const resetErrorMessage = document.getElementById('reset-error-message');
+    const resetErrorText = document.getElementById('reset-error-text');
+    const resetSuccessMessage = document.getElementById('reset-success-message');
+    const resetSuccessText = document.getElementById('reset-success-text');
+    const newPasswordToggle = document.getElementById('new-password-toggle');
+    const newPasswordInput = document.getElementById('new-password');
+
+    let forgotEmailValue = '';
+
+    // View switching functions
+    function showForgotPassword() {
+      form.style.display = 'none';
+      forgotLink.style.display = 'none';
+      forgotForm.style.display = 'block';
+      resetForm.style.display = 'none';
+      errorMessage.classList.remove('show');
+      forgotErrorMessage.classList.remove('show');
+      forgotSuccessMessage.style.display = 'none';
+      document.getElementById('forgot-email').value = document.getElementById('email').value || '';
+    }
+
+    function showResetPassword() {
+      form.style.display = 'none';
+      forgotLink.style.display = 'none';
+      forgotForm.style.display = 'none';
+      resetForm.style.display = 'block';
+      resetErrorMessage.classList.remove('show');
+      resetSuccessMessage.style.display = 'none';
+    }
+
+    function showLogin() {
+      form.style.display = 'block';
+      forgotLink.style.display = 'block';
+      forgotForm.style.display = 'none';
+      resetForm.style.display = 'none';
+      errorMessage.classList.remove('show');
+    }
+
+    // Password toggle
+    passwordToggle.addEventListener('click', () => {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      passwordToggle.textContent = type === 'password' ? '👁️‍🗨️' : '👁️';
+    });
+
+    // New password toggle
+    newPasswordToggle.addEventListener('click', () => {
+      const type = newPasswordInput.type === 'password' ? 'text' : 'password';
+      newPasswordInput.type = type;
+      newPasswordToggle.textContent = type === 'password' ? '👁️‍🗨️' : '👁️';
+    });
+
+    // Form submission - Login
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      errorMessage.classList.remove('show');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Signing in...';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/dashboard/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+          credentials: 'same-origin',
         });
 
-        const data = await res.json();
-        if (res.ok) {
-            alert(data.message || "Login successful!");
-            window.location.href = "/dashboard.html";
-        } else {
-            document.getElementById("errorMsg").innerText = data.message || "Login failed";
-        }
-    } catch (err) {
-        document.getElementById("errorMsg").innerText = "Error connecting to server";
-    }
-});
+        const data = await response.json();
 
-    </script>
+        if (response.ok) {
+          window.location.href = data.redirectUrl || '/dashboard';
+        } else {
+          errorText.textContent = data.error || 'Invalid email or password';
+          errorMessage.classList.add('show');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Sign In';
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        errorText.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.add('show');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Form submission - Forgot Password
+    forgotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      forgotErrorMessage.classList.remove('show');
+      forgotSuccessMessage.style.display = 'none';
+      forgotSubmitBtn.disabled = true;
+      forgotSubmitBtn.textContent = '⏳ Sending OTP...';
+
+      forgotEmailValue = document.getElementById('forgot-email').value;
+
+      try {
+        const response = await fetch('/dashboard/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: forgotEmailValue }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          forgotSuccessText.textContent = 'OTP has been generated. Check the server console for the OTP.';
+          forgotSuccessMessage.style.display = 'block';
+          setTimeout(() => {
+            showResetPassword();
+          }, 1500);
+        } else {
+          forgotErrorText.textContent = data.message || 'Failed to process request';
+          forgotErrorMessage.classList.add('show');
+        }
+      } catch (err) {
+        console.error('Forgot password error:', err);
+        forgotErrorText.textContent = 'An error occurred. Please try again.';
+        forgotErrorMessage.classList.add('show');
+      } finally {
+        forgotSubmitBtn.disabled = false;
+        forgotSubmitBtn.textContent = 'Send OTP';
+      }
+    });
+
+    // Form submission - Reset Password
+    resetForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      resetErrorMessage.classList.remove('show');
+      resetSuccessMessage.style.display = 'none';
+      resetSubmitBtn.disabled = true;
+      resetSubmitBtn.textContent = '⏳ Resetting...';
+
+      const otp = document.getElementById('otp').value;
+      const newPassword = document.getElementById('new-password').value;
+
+      if (newPassword.length < 6) {
+        resetErrorText.textContent = 'Password must be at least 6 characters';
+        resetErrorMessage.classList.add('show');
+        resetSubmitBtn.disabled = false;
+        resetSubmitBtn.textContent = 'Reset Password';
+        return;
+      }
+
+      try {
+        const response = await fetch('/dashboard/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: forgotEmailValue, otp, newPassword }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          resetSuccessText.textContent = 'Password has been reset successfully!';
+          resetSuccessMessage.style.display = 'block';
+          setTimeout(() => {
+            showLogin();
+          }, 2000);
+        } else {
+          resetErrorText.textContent = data.message || 'Failed to reset password';
+          resetErrorMessage.classList.add('show');
+        }
+      } catch (err) {
+        console.error('Reset password error:', err);
+        resetErrorText.textContent = 'An error occurred. Please try again.';
+        resetErrorMessage.classList.add('show');
+      } finally {
+        resetSubmitBtn.disabled = false;
+        resetSubmitBtn.textContent = 'Reset Password';
+      }
+    });
+  </script>
 </body>
 </html>

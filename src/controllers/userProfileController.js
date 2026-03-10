@@ -1,84 +1,79 @@
 import User from '../models/userProfile.js';
-import bcrypt from 'bcrypt';
-
+import bcrypt from 'bcryptjs';
+import { getDb } from '../db/connection.js';
 import jwt from 'jsonwebtoken';
-import { signupFormValidation } from '../validation/signUp.js';
+
+import { MongoClient } from 'mongodb';
+
+// Create a single connection
+let dbInstance = null;
+
+const getDatabase = async () => {
+  if (dbInstance) return dbInstance;
+
+  const client = new MongoClient(process.env.MONGO_URL);
+  await client.connect();
+  dbInstance = client.db('volunteer_app'); // Replace with your DB name
+  return dbInstance;
+};
 
 export const signUp = async (req, res) => {
   const name = req.body.name;
-  const email = req.body.email;
+  const email = req.body.email.toLowerCase();
   const address = req.body.address;
   const phoneNumber = req.body.phoneNumber;
   const password = req.body.password;
-<<<<<<< HEAD
   const role = req.body.role;
-  
-=======
 
-  console.log('sss:::', req.body);
-  // const role = req.body.role;
-  const role = 'public';
->>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
   try {
-    const validationResponse = signupFormValidation(req.body);
-    if (validationResponse.success === false) {
-      return res.status(422).json({
+    if (!name || !email || !address || !phoneNumber || !password || !role) {
+      return res.status(400).json({
         success: false,
-        message: validationResponse.message,
+        message: 'All fields are required',
       });
     }
-    const salt = await bcrypt.genSalt(10); // generate salt
-    const hashedPassword = await bcrypt.hash(password, salt);
 
+    const userExists = await User.findOne({
+      $or: [{ email: email }, { phoneNumber: phoneNumber }],
+    });
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists',
+      });
+    }
+    // Password will be hashed by the model's pre-save hook
     const userCreated = await User.create({
       name: name,
       email: email,
       address: address,
       phoneNumber: phoneNumber,
-      password: hashedPassword,
+      password: password, // Plain password - model pre-save hook will hash it
       role: role,
       skill: 'other',
     });
 
-<<<<<<< HEAD
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        id: userCreated._id, 
+      {
+        id: userCreated._id,
         email: userCreated.email,
-        role: userCreated.role 
+        role: userCreated.role,
       },
       process.env.JWT_SECRET, // Make sure you have this in your .env file
       { expiresIn: '7d' } // Token expires in 7 days
     );
-=======
-    //Key generation for authentication checking that takes place in middleware
-    const payload = {
-      id: userCreated._id,
-      email: userCreated.email,
-      role: userCreated.role,
-    };
-
-    //creating token
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '1d',
-    });
->>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
 
     return res.status(201).json({
       success: true,
       message: 'User Registered Successfully',
-<<<<<<< HEAD
       token: token, // Add token to response
       user: {
         id: userCreated._id,
         name: userCreated.name,
         email: userCreated.email,
-        role: userCreated.role
-      }
-=======
-      token,
->>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
+        role: userCreated.role,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -88,18 +83,17 @@ export const signUp = async (req, res) => {
   }
 };
 
-
 export const login = async (req, res) => {
   // const email = req.body.email;
   // const password = req.body.password;
   const { email, password } = req.body;
   try {
     const userLogin = await User.findOne({
-      email: email,
+      email: email.toLowerCase(),
     });
 
     const errorResponse = {
-      message: 'Unauthorized',
+      // message: 'Unauthorized',
       success: false,
     };
 
@@ -147,41 +141,58 @@ export const login = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.user._id || req.user.id;
 
-    const { name, address, phoneNumber } = req.body;
+    // SAFETY CHECK: Ensure req.body exists
+    if (!req.body) {
+      return res.status(400).json({
+        success: false,
+        message: 'No data received. Ensure Content-Type is multipart/form-data',
+      });
+    }
+
+    const { name, address, phoneNumber, email, skill } = req.body;
 
     if (!id) {
-      return res.status(403).json({
-        success: false,
-        message: 'id required',
-      });
+      return res.status(403).json({ success: false, message: 'ID required' });
     }
 
-    const data = await User.findById(id);
+    const user = await User.findById(id);
 
-    if (!data) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data not available',
-      });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'User not found' });
     }
 
-    data.name = name;
-    data.address = address;
-    data.phoneNumber = phoneNumber;
+    // Update fields if they exist in the request
+    if (name) user.name = name;
+    if (address) user.address = address;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (email) user.email = email.toLowerCase();
+    if (skill) user.skill = skill;
 
-    await data.save();
-    console.log('Data Updated Successfully', data);
-    return res.status(201).json({
+    // HANDLE IMAGE UPLOAD
+    if (req.file) {
+      // req.file.path contains the location (e.g., "uploads/image.jpg")
+      // Normalize path for different OS (Windows uses backslashes)
+      user.profileImage = req.file.path.replace(/\\/g, '/');
+    }
+
+    await user.save();
+
+    console.log('Data Updated Successfully:', user);
+
+    return res.status(200).json({
       success: true,
-      message: 'Data Updated Successfully',
+      message: 'Profile updated successfully',
+      data: user,
     });
   } catch (error) {
-    console.log(error);
+    console.log('Update Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Unable to update data',
+      message: 'Unable to update data: ' + error.message,
     });
   }
 };
@@ -196,47 +207,6 @@ export const deleteUser = async (req, res) => {
         message: 'id required',
       });
     }
-<<<<<<< HEAD
-}
-
-export const getUserProfile = async (req, res) => {
-  try {
-    // req.user should be set by your protect middleware
-    const userId = req.user._id || req.user.id;
-    
-    const user = await User.findById(userId).select('-password'); // ✅ Correct
-    
-    if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
-    }
-    
-    res.status(200).json({
-      success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        address: user.address,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        skill: user.skill,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching user profile',
-      error: error.message 
-    });
-  }
-};
-=======
     const deletedUser = await User.findById(id);
     if (!deletedUser) {
       return res.status(404).json({
@@ -258,4 +228,192 @@ export const getUserProfile = async (req, res) => {
     });
   }
 };
->>>>>>> 224bf43d89236b3a35a85183ca0ec6d686a2b4e0
+
+export const getUserProfile = async (req, res) => {
+  try {
+    // req.user should be set by your protect middleware
+    const userId = req.user._id || req.user.id;
+
+    const user = await User.findById(userId).select('-password'); // ✅ Correct
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        skill: user.skill,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        profileImage: user.profileImage,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user profile',
+      error: error.message,
+    });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id || req.user._id; // from your auth middleware
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Old password and new password are required',
+      });
+    }
+
+    // Get user from database
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Compare passwords correctly
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect current password',
+      });
+    }
+
+    // Assign plain password - the pre-save hook will hash it automatically
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update password',
+    });
+  }
+};
+
+// Generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    console.log(`[FORGOT PASSWORD] Request received for email: ${email}`);
+    console.log(`Searching for user with email: ${email.toLowerCase()}`);
+    console.log('='.repeat(50));
+    console.log('All Users in Database:');
+    const allUsers = await User.find({});
+    console.log(allUsers);
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    console.log(user);
+
+    // For security, always return success even if user doesn't exist
+    if (!user) {
+      console.log(`[FORGOT PASSWORD] No user found with email: ${email}`);
+      return res.status(200).json({
+        success: true,
+        message: 'If the email exists, an OTP has been sent.',
+      });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+
+    // Set OTP expiry to 10 minutes from now
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Save OTP to user document
+    user.passwordResetOtp = otp;
+    user.passwordResetOtpExpires = otpExpiry;
+    await user.save({ validateBeforeSave: false });
+
+    // Log OTP to console (for development/testing)
+    console.log('='.repeat(50));
+    console.log('[FORGOT PASSWORD] OTP Generated');
+    console.log(`Email: ${email}`);
+    console.log(`OTP: ${otp}`);
+    console.log(`Expires at: ${otpExpiry.toLocaleString()}`);
+    console.log('='.repeat(50));
+
+    return res.status(200).json({
+      success: true,
+      message: 'If the email exists, an OTP has been sent.',
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process forgot password request',
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      passwordResetOtp: otp,
+      passwordResetOtpExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP',
+      });
+    }
+
+    // Update password (pre-save hook will hash it)
+    user.password = newPassword;
+
+    // Clear OTP fields
+    user.passwordResetOtp = null;
+    user.passwordResetOtpExpires = null;
+
+    await user.save();
+
+    console.log(`[RESET PASSWORD] Password reset successful for: ${email}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
+    });
+  }
+};
