@@ -1,5 +1,6 @@
 import DonationRequest from '../models/DonationRequest.js';
 import Notification from '../models/Notification.js';
+import { uploadFilesToCloudinary } from '../services/cloudinaryStorage.js';
 // FCM is now sent automatically via Notification model post-save hook
 
 export const addDonationRequest = async (req, res) => {
@@ -31,7 +32,7 @@ export const addDonationRequest = async (req, res) => {
 
   // Handle uploaded files
   const proofImages = req.files
-    ? req.files.map((file) => `/uploads/${file.filename}`)
+    ? await uploadFilesToCloudinary(req.files, 'donation_proofs')
     : [];
 
   // Get userId from JWT token (set by auth middleware)
@@ -210,7 +211,7 @@ export const updateDonationRequest = async (req, res) => {
 
     // Handle new uploaded files
     const newProofImages = req.files
-      ? req.files.map((file) => `/uploads/${file.filename}`)
+      ? await uploadFilesToCloudinary(req.files, 'donation_proofs')
       : [];
 
     if (!id) {

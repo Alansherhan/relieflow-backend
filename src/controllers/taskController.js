@@ -3,6 +3,7 @@ import AidRequest from '../models/AidRequest.js';
 import DonationRequest from '../models/DonationRequest.js';
 import Notification from '../models/Notification.js';
 import PortalDonation from '../models/PortalDonation.js';
+import { uploadFileToCloudinary } from '../services/cloudinaryStorage.js';
 // FCM is now sent automatically via Notification model post-save hook
 
 export const assignTask = async (req, res) => {
@@ -490,8 +491,8 @@ export const completeTaskWithProof = async (req, res) => {
       });
     }
 
-    // Generate the proof image URL (relative path for serving static files)
-    const proofImageUrl = `/uploads/${req.file.filename}`;
+    // Upload proof image to Cloudinary
+    const proofImageUrl = await uploadFileToCloudinary(req.file, 'proof_images');
 
     // Update task with proof image and completion status
     task.status = 'completed';

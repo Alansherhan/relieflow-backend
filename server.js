@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import fs from 'fs';
 import router from './src/routes/apiRoutes.js';
 import portalRoutes from './src/routes/portal.routes.js';
 import AdminJS from 'adminjs';
@@ -45,25 +46,35 @@ import {
 dotenv.config();
 const app = express();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Trust Render's reverse proxy (required for secure cookies behind HTTPS proxy)
 app.set('trust proxy', 1);
 
-// TEMPORARY DEBUG: Check if .adminjs/bundle.js exists
-import fs from 'fs';
-app.get('/debug-bundle', (req, res) => {
-  const resolved = path.resolve('.adminjs/bundle.js');
-  const cwd = process.cwd();
-  const exists = fs.existsSync(resolved);
-  const dirExists = fs.existsSync(path.resolve('.adminjs'));
-  let dirContents = [];
-  if (dirExists) {
-    dirContents = fs.readdirSync(path.resolve('.adminjs'));
-  }
-  res.json({ cwd, resolved, exists, dirExists, dirContents, nodeEnv: process.env.NODE_ENV });
-});
+// Serve AdminJS components bundle directly — bypasses AdminJS's internal router
+// which fails to serve this file on Render due to middleware chain issues
+const bundlePath = path.join(__dirname, '.adminjs', 'bundle.js');
+const bundlePathCwd = path.resolve('.adminjs', 'bundle.js');
+const resolvedBundlePath = fs.existsSync(bundlePath) ? bundlePath : bundlePathCwd;
+console.log('AdminJS bundle path:', resolvedBundlePath, '| exists:', fs.existsSync(resolvedBundlePath));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Pre-read bundle into memory at startup for reliable serving
+let bundleContent;
+try {
+  bundleContent = fs.readFileSync(resolvedBundlePath, 'utf-8');
+  console.log('AdminJS bundle loaded into memory:', bundleContent.length, 'bytes');
+} catch (err) {
+  console.error('Failed to read AdminJS bundle:', err.message);
+}
+
+app.get('/dashboard/frontend/assets/components.bundle.js', (req, res) => {
+  if (!bundleContent) {
+    return res.status(404).send('Bundle not found');
+  }
+  res.set('Content-Type', 'application/javascript');
+  res.send(bundleContent);
+});
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/images', express.static(path.join(__dirname, 'assets/images')));
 
@@ -135,7 +146,7 @@ const adminOptions = {
 
   branding: {
     companyName: 'RelieFlow',
-    logo: '/images/logo3.png',
+    logo: '/images/RelieFlow.png',
     withMadeWithLove: false,
     softwareBrothers: false,
     favicon: '/images/favicon.ico',
@@ -172,8 +183,10 @@ const adminOptions = {
 
 const adminJS = new AdminJS(adminOptions);
 
-// Note: AdminJS component bundle is pre-built (see .adminjs/bundle.js)
-// buildAuthenticatedRouter() below will call admin.initialize() internally
+// Skip runtime re-bundling — bundle is pre-built during the build step (see build-adminjs.js)
+// buildAuthenticatedRouter() calls adminJS.initialize() internally which would
+// re-bundle and can fail on memory-constrained hosts (Render free tier).
+adminJS.initialize = async () => {};
 
 // Session middleware - MUST use same cookie name as AdminJS router to share session
 const sessionMiddleware = session({

@@ -2,6 +2,7 @@ import User from '../models/userProfile.js';
 import bcrypt from 'bcryptjs';
 import { getDb } from '../db/connection.js';
 import jwt from 'jsonwebtoken';
+import { uploadFileToCloudinary } from '../services/cloudinaryStorage.js';
 
 import { MongoClient } from 'mongodb';
 
@@ -174,9 +175,8 @@ export const updateProfile = async (req, res) => {
 
     // HANDLE IMAGE UPLOAD
     if (req.file) {
-      // req.file.path contains the location (e.g., "uploads/image.jpg")
-      // Normalize path for different OS (Windows uses backslashes)
-      user.profileImage = req.file.path.replace(/\\/g, '/');
+      const imageUrl = await uploadFileToCloudinary(req.file, 'profile_images');
+      user.profileImage = imageUrl;
     }
 
     await user.save();
