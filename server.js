@@ -146,7 +146,7 @@ const adminOptions = {
 
   branding: {
     companyName: 'RelieFlow',
-    logo: '/images/logo3.png',
+    logo: '/images/RelieFlow.png',
     withMadeWithLove: false,
     softwareBrothers: false,
     favicon: '/images/favicon.ico',
