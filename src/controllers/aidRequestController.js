@@ -1,5 +1,6 @@
 import AidRequest from '../models/AidRequest.js';
 import Notification from '../models/Notification.js';
+import { uploadFileToCloudinary } from '../services/cloudinaryStorage.js';
 // FCM is now sent automatically via Notification model post-save hook
 
 export const getAidRequest = async (req, res) => {
@@ -34,7 +35,7 @@ export const addAidRequest = async (req, res) => {
 
   // Get imageUrl from uploaded file or from body
   const imageUrl = req.file
-    ? `/uploads/${req.file.filename}`
+    ? await uploadFileToCloudinary(req.file, 'aid_requests')
     : req.body.imageUrl;
   const description = req.body.description;
 
@@ -247,7 +248,7 @@ export const updateAidRequestByUser = async (req, res) => {
 
     // Handle image from file upload or body
     const imageUrl = req.file
-      ? `/uploads/${req.file.filename}`
+      ? await uploadFileToCloudinary(req.file, 'aid_requests')
       : req.body.imageUrl;
 
     if (!id) {

@@ -4,6 +4,7 @@ import DonationRequest from '../models/DonationRequest.js';
 import AdminWallet from '../models/AdminWallet.js';
 import Task from '../models/Task.js';
 import Notification from '../models/Notification.js';
+import { uploadFileToCloudinary } from '../services/cloudinaryStorage.js';
 // FCM is now sent automatically via Notification model post-save hook
 
 /**
@@ -638,7 +639,7 @@ export const submitItemDonation = async (req, res) => {
     }
 
     // Handle proof image upload
-    const proofImage = req.file ? `/uploads/${req.file.filename}` : null;
+    const proofImage = req.file ? await uploadFileToCloudinary(req.file, 'donation_proofs') : null;
 
     // Update donation
     const donatedItems = itemDetails || portalDonation.itemDetails;
@@ -821,7 +822,7 @@ export const requestPickup = async (req, res) => {
     }
 
     // Handle proof image upload
-    const proofImage = req.file ? `/uploads/${req.file.filename}` : null;
+    const proofImage = req.file ? await uploadFileToCloudinary(req.file, 'donation_proofs') : null;
 
     // Fetch donation request to get delivery location
     const donationRequest = await DonationRequest.findById(

@@ -20,6 +20,12 @@ services:
         sync: false # Set to your Vercel donation portal URL
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false # Paste firebase-service-account.json contents as single-line JSON
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
