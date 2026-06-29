@@ -298,6 +298,15 @@ app.get('/api/dashboard/heatmap', getHeatmapData);
 import { getDashboardStats } from './src/controllers/dashboardController.js';
 app.get('/api/dashboard/stats', getDashboardStats);
 
+// --- ADDED ROOT HANDLER FOR RENDER HEALTH CHECK ---
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: "ReliefFlow Backend API is running smoothly!",
+    status: "healthy",
+    dashboard: "/dashboard"
+  });
+});
+
 app.use('/', router);
 
 const PORT = process.env.PORT || 3000;
@@ -306,4 +315,3 @@ app.listen(PORT, HOST, () => {
   console.log(`Server running on ${HOST}:${PORT}`);
   console.log(`AdminJS available at http://localhost:${PORT}/dashboard`);
 });
-// Trigger restart
